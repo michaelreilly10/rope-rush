@@ -1,29 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RopeRush } from "../game/RopeRush";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Rope Rush — Endless Ninja Descent" },
+      { name: "description", content: "A one-tap arcade descent. Slide down the rope, dodge traps, master the combo system, and unlock ninja cosmetics." },
+      { property: "og:title", content: "Rope Rush" },
+      { property: "og:description", content: "One-tap ninja arcade. Tap to switch sides of the rope and survive the endless fortress." },
+      { name: "theme-color", content: "#0d0b1a" },
     ],
   }),
-  component: Index,
+  component: () => <RopeRush />,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
