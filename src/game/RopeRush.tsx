@@ -34,6 +34,7 @@ export function RopeRush() {
     e.preventDefault();
     if (!game) return;
     if (hud?.phase === "playing") game.tap();
+    else if (hud?.phase === "menu") game.startRun();
   };
 
   return (
