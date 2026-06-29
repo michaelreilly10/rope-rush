@@ -19,8 +19,8 @@ export function RopeRush() {
     const unsub = game.subscribe(setHud);
     const onResize = () => game.resize();
     window.addEventListener("resize", onResize);
-    // Skip menu — jump straight into a run.
-    game.startRun();
+    // Stay on menu until first tap.
+
     return () => {
       unsub();
       window.removeEventListener("resize", onResize);
