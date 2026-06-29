@@ -50,6 +50,17 @@ export function RopeRush() {
 
       {hud && game && (
         <>
+          {hud.phase === "menu" && (
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+              <h1 className="font-display text-6xl text-white drop-shadow-lg">
+                Rope<span className="text-rose-400">Rush</span>
+              </h1>
+              {hud.best > 0 && (
+                <div className="mt-2 text-sm text-white/70">Best {hud.best}m</div>
+              )}
+              <div className="mt-8 animate-pulse font-display text-2xl text-white">TAP TO START</div>
+            </div>
+          )}
           {hud.phase === "playing" && <HUD hud={hud} onPause={() => game.pause()} />}
           {hud.phase === "paused" && (
             <PauseOverlay
