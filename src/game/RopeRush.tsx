@@ -2,11 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Game } from "./engine";
 import type { HUDState } from "./types";
 import { HUD } from "./ui/HUD";
-import { MainMenu } from "./ui/MainMenu";
 import { GameOver } from "./ui/GameOver";
 import { PauseOverlay } from "./ui/PauseOverlay";
-import { Shop } from "./ui/Shop";
-import { SettingsPanel } from "./ui/SettingsPanel";
 
 export function RopeRush() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -22,6 +19,8 @@ export function RopeRush() {
     const unsub = game.subscribe(setHud);
     const onResize = () => game.resize();
     window.addEventListener("resize", onResize);
+    // Skip menu — jump straight into a run.
+    game.startRun();
     return () => {
       unsub();
       window.removeEventListener("resize", onResize);
@@ -51,18 +50,10 @@ export function RopeRush() {
       {hud && game && (
         <>
           {hud.phase === "playing" && <HUD hud={hud} onPause={() => game.pause()} />}
-          {hud.phase === "menu" && (
-            <MainMenu
-              hud={hud}
-              onPlay={() => game.startRun()}
-              onShop={() => game.goShop()}
-              onSettings={() => game.goSettings()}
-            />
-          )}
           {hud.phase === "paused" && (
             <PauseOverlay
               onResume={() => game.resumePlay()}
-              onMenu={() => { game.endRun(); game.goMenu(); }}
+              onMenu={() => { game.endRun(); game.startRun(); }}
             />
           )}
           {hud.phase === "gameover" && (
@@ -70,14 +61,8 @@ export function RopeRush() {
               hud={hud}
               onContinue={() => game.continueWithAd()}
               onRetry={() => game.startRun()}
-              onHome={() => game.goMenu()}
+              onHome={() => game.startRun()}
             />
-          )}
-          {hud.phase === "shop" && (
-            <Shop game={game} onBack={() => game.goMenu()} />
-          )}
-          {hud.phase === "settings" && (
-            <SettingsPanel game={game} onBack={() => game.goMenu()} />
           )}
         </>
       )}

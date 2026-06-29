@@ -52,7 +52,7 @@ export function GameOver({
           <div className="mt-2 text-sm text-white/60">
             Best {hud.best}m {hud.score >= hud.best && hud.score > 0 && "· NEW BEST!"}
           </div>
-          <div className="mt-2 text-amber-300">+{hud.runCoins} coins</div>
+          
 
           <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
             {hud.canContinue && (

@@ -14,20 +14,14 @@ export function HUD({ hud, onPause }: { hud: HUDState; onPause: () => void }) {
           <div className="text-[10px] text-white/60">Best {hud.best}m</div>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <button
-            onClick={onPause}
-            aria-label="Pause"
-            className="grid h-10 w-10 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm active:scale-95"
-          >
-            <span className="block h-4 w-1 bg-white" />
-            <span className="-mt-4 ml-2 block h-4 w-1 bg-white" />
-          </button>
-          <div className="flex items-center gap-2 rounded-2xl bg-black/40 px-3 py-1.5 text-white backdrop-blur-sm">
-            <span className="text-amber-300">●</span>
-            <span className="font-display text-base">{hud.runCoins}</span>
-          </div>
-        </div>
+        <button
+          onClick={onPause}
+          aria-label="Pause"
+          className="grid h-10 w-10 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm active:scale-95"
+        >
+          <span className="block h-4 w-1 bg-white" />
+          <span className="-mt-4 ml-2 block h-4 w-1 bg-white" />
+        </button>
       </div>
 
       <div className="pointer-events-none flex items-center justify-center pt-2">
