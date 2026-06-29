@@ -622,7 +622,8 @@ export class Game {
     const r = Math.round(ar + (br - ar) * t);
     const g = Math.round(ag + (bg - ag) * t);
     const bl = Math.round(ab + (bb - ab) * t);
-    return `rgb(${r},${g},${bl})`;
+    const hex = (n: number) => n.toString(16).padStart(2, "0");
+    return `#${hex(r)}${hex(g)}${hex(bl)}`;
   }
 
   private themeMix<K extends keyof ThemePalette>(k: K): string {
