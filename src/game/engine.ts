@@ -626,6 +626,30 @@ export class Game {
     return `#${hex(r)}${hex(g)}${hex(bl)}`;
   }
 
+  private rgba(hexColor: string, alpha: number): string {
+    const v = parseInt(hexColor.slice(1), 16);
+    const r = (v >> 16) & 255;
+    const g = (v >> 8) & 255;
+    const b = v & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  private roundedRect(x: number, y: number, w: number, h: number, r: number) {
+    const { ctx } = this;
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
   private themeMix<K extends keyof ThemePalette>(k: K): string {
     const a = THEMES[this.prevThemeIndex][k] as string;
     const b = THEMES[this.themeIndex][k] as string;
@@ -707,7 +731,7 @@ export class Game {
         ctx.fillRect(lx - 1, y - 18, 2, 18);
         // lantern glow
         const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 38);
-        g.addColorStop(0, `${lantern}cc`);
+        g.addColorStop(0, this.rgba(lantern, 0.8));
         g.addColorStop(1, "transparent");
         ctx.fillStyle = g;
         ctx.fillRect(lx - 40, y - 60, 80, 80);
@@ -914,8 +938,7 @@ export class Game {
     }
     // body
     ctx.fillStyle = ch.body;
-    ctx.beginPath();
-    ctx.roundRect(-10, -14, 20, 26, 5);
+    this.roundedRect(-10, -14, 20, 26, 5);
     ctx.fill();
     // head
     ctx.fillStyle = ch.body;
