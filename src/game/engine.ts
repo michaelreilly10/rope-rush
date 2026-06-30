@@ -728,10 +728,10 @@ export class Game {
     const { ctx, W, H } = this;
     const rope = findRope(this.save.equipped.rope);
     const x = W / 2;
-    const color = this.goldenRope ? "#ffd54a" : rope.color;
-    if (rope.glow || this.goldenRope) {
+    const color = rope.color;
+    if (rope.glow) {
       ctx.shadowBlur = 16;
-      ctx.shadowColor = this.goldenRope ? "#ffd54a" : rope.glow ?? color;
+      ctx.shadowColor = rope.glow;
     }
     ctx.strokeStyle = color;
     ctx.lineWidth = rope.style === "chain" ? 5 : 6;
