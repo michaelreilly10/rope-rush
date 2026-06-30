@@ -713,7 +713,7 @@ export class Game {
 
     // Horizontal beams scrolling
     const beamSpacing = 120;
-    const offset = (this.worldY * 18) % beamSpacing;
+    const offset = ((-this.worldY * 18) % beamSpacing + beamSpacing) % beamSpacing;
     ctx.fillStyle = beam;
     for (let y = -beamSpacing + offset; y < H + beamSpacing; y += beamSpacing) {
       ctx.fillRect(0, y, W, 14);
