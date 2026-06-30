@@ -769,7 +769,7 @@ export class Game {
     if (rope.style === "rope" || rope.style === "vine") {
       ctx.strokeStyle = "rgba(0,0,0,0.35)";
       ctx.lineWidth = 1;
-      const off = (this.worldY * 50) % 10;
+      const off = ((-this.worldY * 50) % 10 + 10) % 10;
       for (let y = -10 + off; y < H; y += 10) {
         ctx.beginPath();
         ctx.moveTo(x - 3, y);
