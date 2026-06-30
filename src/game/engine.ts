@@ -788,8 +788,8 @@ export class Game {
   }
 
   private worldToScreenY(yMeters: number): number {
-    // ninja is at H*0.55, world distance per meter = 28 px
-    return this.H * 0.55 - (yMeters - this.worldY) * 28;
+    // ninja is at H*0.55; obstacles approach from below and rise upward
+    return this.H * 0.55 + (yMeters - this.worldY) * 28;
   }
 
   private renderObstacles() {
