@@ -898,14 +898,6 @@ export class Game {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
-    // shield ring
-    if (this.shield) {
-      ctx.strokeStyle = "#7fd0ff";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.stroke();
-    }
     // body
     ctx.fillStyle = ch.body;
     this.roundedRect(-10, -14, 20, 26, 5);
