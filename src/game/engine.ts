@@ -489,15 +489,6 @@ export class Game {
   }
 
   private takeHit() {
-    if (this.shield) {
-      this.shield = false;
-      this.flashCombo("SHIELD BROKEN");
-      audio.sfx("hit");
-      this.shake = 0.5;
-      this.invulnUntil = performance.now() / 1000 + 0.6;
-      this.combo = 0;
-      return;
-    }
     this.lives--;
     this.combo = 0;
     this.goldenRope = false;
