@@ -713,12 +713,12 @@ export class Game {
 
     // Horizontal beams scrolling
     const beamSpacing = 120;
-    const offset = (this.worldY * 18) % beamSpacing;
+    const offset = ((-this.worldY * 18) % beamSpacing + beamSpacing) % beamSpacing;
     ctx.fillStyle = beam;
     for (let y = -beamSpacing + offset; y < H + beamSpacing; y += beamSpacing) {
       ctx.fillRect(0, y, W, 14);
       // lantern on alternating beams
-      const idx = Math.round((y + this.worldY * 18) / beamSpacing);
+      const idx = Math.round((y - this.worldY * 18) / beamSpacing);
       if (idx % 2 === 0) {
         const lx = idx % 4 === 0 ? 48 : W - 48;
         ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -739,7 +739,7 @@ export class Game {
 
     // banner accents (occasional)
     const bannerSpacing = 280;
-    const boff = (this.worldY * 18) % bannerSpacing;
+    const boff = ((-this.worldY * 18) % bannerSpacing + bannerSpacing) % bannerSpacing;
     for (let y = -bannerSpacing + boff; y < H + bannerSpacing; y += bannerSpacing) {
       ctx.fillStyle = accent;
       ctx.fillRect(W / 2 - 6, y, 12, 56);
@@ -769,7 +769,7 @@ export class Game {
     if (rope.style === "rope" || rope.style === "vine") {
       ctx.strokeStyle = "rgba(0,0,0,0.35)";
       ctx.lineWidth = 1;
-      const off = (this.worldY * 50) % 10;
+      const off = ((-this.worldY * 50) % 10 + 10) % 10;
       for (let y = -10 + off; y < H; y += 10) {
         ctx.beginPath();
         ctx.moveTo(x - 3, y);
@@ -778,7 +778,7 @@ export class Game {
       }
     } else if (rope.style === "chain") {
       ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      const off = (this.worldY * 50) % 12;
+      const off = ((-this.worldY * 50) % 12 + 12) % 12;
       for (let y = -12 + off; y < H; y += 12) {
         ctx.beginPath();
         ctx.ellipse(x, y, 3, 5, 0, 0, Math.PI * 2);
@@ -788,8 +788,8 @@ export class Game {
   }
 
   private worldToScreenY(yMeters: number): number {
-    // ninja is at H*0.55, world distance per meter = 28 px
-    return this.H * 0.55 - (yMeters - this.worldY) * 28;
+    // ninja is at H*0.55; obstacles approach from below and rise upward
+    return this.H * 0.55 + (yMeters - this.worldY) * 28;
   }
 
   private renderObstacles() {
