@@ -203,9 +203,6 @@ export class Game {
     this.lives = 3;
     this.coinsRun = 0;
     this.combo = 0;
-    this.shield = false;
-    this.goldenRope = false;
-    this.slowMoUntil = 0;
     this.invulnUntil = 0;
     this.hitFlash = 0;
     this.shake = 0;
