@@ -739,7 +739,7 @@ export class Game {
 
     // banner accents (occasional)
     const bannerSpacing = 280;
-    const boff = (this.worldY * 18) % bannerSpacing;
+    const boff = ((-this.worldY * 18) % bannerSpacing + bannerSpacing) % bannerSpacing;
     for (let y = -bannerSpacing + boff; y < H + bannerSpacing; y += bannerSpacing) {
       ctx.fillStyle = accent;
       ctx.fillRect(W / 2 - 6, y, 12, 56);
