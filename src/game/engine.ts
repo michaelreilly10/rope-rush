@@ -484,7 +484,7 @@ export class Game {
   private takeHit() {
     this.lives--;
     this.combo = 0;
-    this.goldenRope = false;
+    
     audio.sfx("hit");
     this.shake = 1;
     this.hitFlash = 1;
