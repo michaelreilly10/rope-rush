@@ -328,8 +328,7 @@ export class Game {
     }
 
     const now = performance.now() / 1000;
-    const slow = now < this.slowMoUntil ? 0.55 : 1;
-    const eff = dt * slow;
+    const eff = dt;
 
     // speed
     this.speed = Math.min(MAX_SPEED, this.speed + SPEED_ACCEL * eff);
