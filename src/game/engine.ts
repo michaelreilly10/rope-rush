@@ -778,7 +778,7 @@ export class Game {
       }
     } else if (rope.style === "chain") {
       ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      const off = (this.worldY * 50) % 12;
+      const off = ((-this.worldY * 50) % 12 + 12) % 12;
       for (let y = -12 + off; y < H; y += 12) {
         ctx.beginPath();
         ctx.ellipse(x, y, 3, 5, 0, 0, Math.PI * 2);
