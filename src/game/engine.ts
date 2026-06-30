@@ -359,14 +359,8 @@ export class Game {
       this.spawnObstacle(this.nextSpawnY);
       this.nextSpawnY += bandSpawnGap(this.worldY, this.speed);
     }
-    // spawn coins
-    while (this.nextCoinY < this.worldY + 30) {
-      this.spawnCoin(this.nextCoinY);
-      this.nextCoinY += 4 + Math.random() * 6;
-    }
 
     this.updateObstacles(eff);
-    this.updateCoins();
     this.updateParticles(dt);
 
     // trail
