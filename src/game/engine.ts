@@ -679,7 +679,7 @@ export class Game {
 
     this.renderBackground();
     this.renderRope();
-    this.renderCoins();
+    
     this.renderObstacles();
     this.renderParticles();
     this.renderNinja();
