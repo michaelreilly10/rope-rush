@@ -403,12 +403,8 @@ export class Game {
     if (!o) return;
     const kinds = bandKinds(this.worldY);
     const kind = kinds[(Math.random() * kinds.length) | 0];
-    // fire often spans both, blades alternate, arrows pick a side
-    let side: Side | 0;
-    if (kind === "fire") side = Math.random() < 0.35 ? 0 : (Math.random() < 0.5 ? -1 : 1);
-    else if (kind === "blade") side = Math.random() < 0.5 ? -1 : 1;
-    else if (kind === "arrow") side = Math.random() < 0.5 ? -1 : 1;
-    else side = Math.random() < 0.15 ? 0 : (Math.random() < 0.5 ? -1 : 1);
+    // Always pick a single side so the player can always dodge
+    const side: Side = Math.random() < 0.5 ? -1 : 1;
     o.active = true;
     o.kind = kind;
     o.y = y;
