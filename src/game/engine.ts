@@ -440,11 +440,7 @@ export class Game {
         if (!o.hit && !o.passed) {
           o.passed = true;
           this.combo++;
-          if (this.combo === 10) { this.flashCombo("x2 COINS"); audio.sfx("milestone"); }
-          else if (this.combo === 25) { this.flashCombo("SLOW-MO"); this.slowMoUntil = now + 3; audio.sfx("milestone"); }
-          else if (this.combo === 50) { this.flashCombo("SHIELD"); this.shield = true; audio.sfx("milestone"); }
-          else if (this.combo === 100) { this.flashCombo("GOLDEN ROPE"); this.goldenRope = true; audio.sfx("milestone"); }
-          else if (this.combo % 5 === 0) audio.sfx("combo");
+          if (this.combo % 5 === 0) audio.sfx("combo");
         }
         o.active = false;
         continue;
