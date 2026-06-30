@@ -47,12 +47,6 @@ export function HUD({ hud, onPause }: { hud: HUDState; onPause: () => void }) {
         </div>
       )}
 
-      {/* status icons */}
-      <div className="pointer-events-none mt-2 flex justify-center gap-2 text-xs">
-        {hud.shield && <span className="rounded-full bg-cyan-500/80 px-2 py-0.5 text-white">SHIELD</span>}
-        {hud.slowMo && <span className="rounded-full bg-purple-500/80 px-2 py-0.5 text-white">SLOW-MO</span>}
-        {hud.goldenRope && <span className="rounded-full bg-amber-500/80 px-2 py-0.5 text-black">GOLDEN</span>}
-      </div>
     </div>
   );
 }
