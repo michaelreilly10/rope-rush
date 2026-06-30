@@ -99,9 +99,6 @@ export class Game {
   lives = 3;
   coinsRun = 0;
   combo = 0;
-  shield = false;
-  goldenRope = false;
-  slowMoUntil = 0;
   invulnUntil = 0;
   hitFlash = 0;
   shake = 0;
