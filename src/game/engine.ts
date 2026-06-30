@@ -99,9 +99,6 @@ export class Game {
   lives = 3;
   coinsRun = 0;
   combo = 0;
-  shield = false;
-  goldenRope = false;
-  slowMoUntil = 0;
   invulnUntil = 0;
   hitFlash = 0;
   shake = 0;
@@ -179,9 +176,9 @@ export class Game {
       lives: this.lives,
       combo: this.combo,
       comboFlash: this.comboFlashLabel,
-      shield: this.shield,
-      goldenRope: this.goldenRope,
-      slowMo: performance.now() / 1000 < this.slowMoUntil,
+      shield: false,
+      goldenRope: false,
+      slowMo: false,
       speedPct: (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED),
       themeName: THEMES[this.themeIndex].name,
       phase: this.phase,
@@ -206,9 +203,6 @@ export class Game {
     this.lives = 3;
     this.coinsRun = 0;
     this.combo = 0;
-    this.shield = false;
-    this.goldenRope = false;
-    this.slowMoUntil = 0;
     this.invulnUntil = 0;
     this.hitFlash = 0;
     this.shake = 0;
@@ -334,8 +328,7 @@ export class Game {
     }
 
     const now = performance.now() / 1000;
-    const slow = now < this.slowMoUntil ? 0.55 : 1;
-    const eff = dt * slow;
+    const eff = dt;
 
     // speed
     this.speed = Math.min(MAX_SPEED, this.speed + SPEED_ACCEL * eff);
@@ -440,11 +433,7 @@ export class Game {
         if (!o.hit && !o.passed) {
           o.passed = true;
           this.combo++;
-          if (this.combo === 10) { this.flashCombo("x2 COINS"); audio.sfx("milestone"); }
-          else if (this.combo === 25) { this.flashCombo("SLOW-MO"); this.slowMoUntil = now + 3; audio.sfx("milestone"); }
-          else if (this.combo === 50) { this.flashCombo("SHIELD"); this.shield = true; audio.sfx("milestone"); }
-          else if (this.combo === 100) { this.flashCombo("GOLDEN ROPE"); this.goldenRope = true; audio.sfx("milestone"); }
-          else if (this.combo % 5 === 0) audio.sfx("combo");
+          if (this.combo % 5 === 0) audio.sfx("combo");
         }
         o.active = false;
         continue;
@@ -493,18 +482,9 @@ export class Game {
   }
 
   private takeHit() {
-    if (this.shield) {
-      this.shield = false;
-      this.flashCombo("SHIELD BROKEN");
-      audio.sfx("hit");
-      this.shake = 0.5;
-      this.invulnUntil = performance.now() / 1000 + 0.6;
-      this.combo = 0;
-      return;
-    }
     this.lives--;
     this.combo = 0;
-    this.goldenRope = false;
+    
     audio.sfx("hit");
     this.shake = 1;
     this.hitFlash = 1;
@@ -748,10 +728,10 @@ export class Game {
     const { ctx, W, H } = this;
     const rope = findRope(this.save.equipped.rope);
     const x = W / 2;
-    const color = this.goldenRope ? "#ffd54a" : rope.color;
-    if (rope.glow || this.goldenRope) {
+    const color = rope.color;
+    if (rope.glow) {
       ctx.shadowBlur = 16;
-      ctx.shadowColor = this.goldenRope ? "#ffd54a" : rope.glow ?? color;
+      ctx.shadowColor = rope.glow;
     }
     ctx.strokeStyle = color;
     ctx.lineWidth = rope.style === "chain" ? 5 : 6;
@@ -917,14 +897,6 @@ export class Game {
     if (spin > 0) {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
-    }
-    // shield ring
-    if (this.shield) {
-      ctx.strokeStyle = "#7fd0ff";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, 22, 0, Math.PI * 2);
-      ctx.stroke();
     }
     // body
     ctx.fillStyle = ch.body;
