@@ -718,7 +718,7 @@ export class Game {
     for (let y = -beamSpacing + offset; y < H + beamSpacing; y += beamSpacing) {
       ctx.fillRect(0, y, W, 14);
       // lantern on alternating beams
-      const idx = Math.round((y + this.worldY * 18) / beamSpacing);
+      const idx = Math.round((y - this.worldY * 18) / beamSpacing);
       if (idx % 2 === 0) {
         const lx = idx % 4 === 0 ? 48 : W - 48;
         ctx.fillStyle = "rgba(0,0,0,0.4)";
