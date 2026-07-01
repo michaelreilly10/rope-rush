@@ -690,7 +690,6 @@ export class Game {
     const { ctx, W, H } = this;
     const beam = this.themeMix("beam");
     const accent = this.themeMix("accent");
-    const lantern = this.themeMix("lantern");
 
     // Soft parallax side pillars (gradient, no hard edges)
     const leftG = ctx.createLinearGradient(0, 0, 48, 0);
