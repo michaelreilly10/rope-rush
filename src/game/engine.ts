@@ -831,21 +831,34 @@ export class Game {
         ctx.save();
         ctx.translate(x, sy);
         switch (o.kind) {
-          case "spike":
-            ctx.fillStyle = "#c5c0b3";
+          case "spike": {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(255,90,90,0.7)";
+            const g = ctx.createLinearGradient(side * -14, 0, side * 14, 0);
+            g.addColorStop(0, "#e8e2d0");
+            g.addColorStop(1, "#8f877a");
+            ctx.fillStyle = g;
             ctx.beginPath();
             ctx.moveTo(side * -14, 0);
             ctx.lineTo(side * 14, -10);
             ctx.lineTo(side * 14, 10);
             ctx.closePath();
             ctx.fill();
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.fillRect(side * 14 - 2, -12, 4, 24);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "rgba(0,0,0,0.45)";
+            this.roundedRect(side * 14 - 2, -12, 4, 24, 1.5);
+            ctx.fill();
             break;
+          }
           case "blade": {
             const r = 22;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "rgba(180,200,255,0.7)";
             ctx.rotate(o.phase);
-            ctx.fillStyle = "#b8b0a0";
+            const g = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
+            g.addColorStop(0, "#f4f0e6");
+            g.addColorStop(1, "#7d7568");
+            ctx.fillStyle = g;
             for (let i = 0; i < 4; i++) {
               ctx.rotate(Math.PI / 2);
               ctx.beginPath();
@@ -855,35 +868,45 @@ export class Game {
               ctx.closePath();
               ctx.fill();
             }
-            ctx.fillStyle = "#4a4540";
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#2a2620";
             ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ffb86b";
+            ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
             break;
           }
           case "fire": {
-            const flick = 0.7 + Math.sin(o.phase * 3) * 0.2;
-            const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 22);
-            g.addColorStop(0, `rgba(255,220,120,${flick})`);
-            g.addColorStop(0.5, `rgba(255,120,40,${flick * 0.8})`);
-            g.addColorStop(1, "transparent");
+            const flick = 0.75 + Math.sin(o.phase * 3) * 0.2;
+            const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
+            g.addColorStop(0, `rgba(255,240,180,${flick})`);
+            g.addColorStop(0.35, `rgba(255,150,60,${flick * 0.9})`);
+            g.addColorStop(0.7, `rgba(255,80,30,${flick * 0.5})`);
+            g.addColorStop(1, "rgba(0,0,0,0)");
             ctx.fillStyle = g;
-            ctx.fillRect(-26, -26, 52, 52);
-            ctx.fillStyle = "#3a2418";
-            ctx.fillRect(-12, 10, 24, 4);
+            ctx.fillRect(-30, -30, 60, 60);
+            ctx.fillStyle = "#2a1810";
+            this.roundedRect(-12, 10, 24, 5, 2);
+            ctx.fill();
             break;
           }
-          case "arrow":
+          case "arrow": {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(255,180,80,0.6)";
             ctx.fillStyle = "#8a6b40";
-            ctx.fillRect(side * -16, -2, 32, 4);
-            ctx.fillStyle = "#d6c79a";
+            this.roundedRect(side * -16, -2, 32, 4, 1.5);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#f0e0a8";
             ctx.beginPath();
             ctx.moveTo(side * 16, -6);
-            ctx.lineTo(side * 22, 0);
+            ctx.lineTo(side * 24, 0);
             ctx.lineTo(side * 16, 6);
             ctx.closePath();
             ctx.fill();
             ctx.fillStyle = "#3a2418";
             ctx.fillRect(side * -18, -4, 3, 8);
             break;
+          }
         }
         ctx.restore();
       };
