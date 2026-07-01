@@ -473,7 +473,6 @@ export class Game {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       if (p.kind === "smoke") { p.vx *= 0.94; p.vy *= 0.94; }
-      if (p.kind === "petal") { p.vx += Math.sin(p.life * 4) * 4 * dt; p.vy += 6 * dt; }
     }
   }
 
