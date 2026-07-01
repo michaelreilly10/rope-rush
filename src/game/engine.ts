@@ -911,12 +911,6 @@ export class Game {
         ctx.globalAlpha = a;
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-      } else if (p.kind === "petal") {
-        ctx.globalAlpha = Math.min(1, a);
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y, p.size, p.size * 0.6, Math.sin(p.life * 2), 0, Math.PI * 2);
-        ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
