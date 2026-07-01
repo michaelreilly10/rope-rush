@@ -357,8 +357,6 @@ export class Game {
     // trail
     if (Math.random() < 0.6) this.spawnTrail();
 
-    // petals ambient
-    if (Math.random() < 0.05) this.spawnPetal();
 
     // shake decay
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 12);
