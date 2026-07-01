@@ -27,32 +27,32 @@ const THEMES: ThemePalette[] = [
   {
     id: "castle",
     name: "Castle",
-    bg: "#0d0b1a",
-    bgFar: "#1a1530",
-    bgNear: "#2a1f40",
-    beam: "#3a2418",
-    accent: "#e64545",
-    lantern: "#ffb347",
+    bg: "#120a24",
+    bgFar: "#1e1444",
+    bgNear: "#3a2168",
+    beam: "#4a2a52",
+    accent: "#ff5577",
+    lantern: "#ffb86b",
   },
   {
     id: "temple",
     name: "Temple",
-    bg: "#0e1a18",
-    bgFar: "#162a26",
-    bgNear: "#1f3a33",
-    beam: "#2c1f15",
-    accent: "#d4a64a",
-    lantern: "#ffd07a",
+    bg: "#0e1a24",
+    bgFar: "#183048",
+    bgNear: "#2a5578",
+    beam: "#3d2a1c",
+    accent: "#ffcf5c",
+    lantern: "#ffe29a",
   },
   {
     id: "bamboo",
     name: "Bamboo Forest",
-    bg: "#0a1810",
-    bgFar: "#13301d",
-    bgNear: "#1d4429",
-    beam: "#3a5a2a",
-    accent: "#a7d96b",
-    lantern: "#f7f0c0",
+    bg: "#0a1a14",
+    bgFar: "#13402a",
+    bgNear: "#256b45",
+    beam: "#4a6b32",
+    accent: "#b8ee78",
+    lantern: "#f9f2b8",
   },
 ];
 
@@ -632,33 +632,61 @@ export class Game {
     // shake
     let ox = 0, oy = 0;
     if (this.shake > 0) {
-      ox = (Math.random() - 0.5) * this.shake * 12;
-      oy = (Math.random() - 0.5) * this.shake * 12;
+      ox = (Math.random() - 0.5) * this.shake * 10;
+      oy = (Math.random() - 0.5) * this.shake * 10;
     }
     ctx.save();
     ctx.translate(ox, oy);
 
-    // bg gradient
+    // bg gradient (deeper, richer)
     const bg = ctx.createLinearGradient(0, 0, 0, H);
     bg.addColorStop(0, this.themeMix("bg"));
-    bg.addColorStop(0.6, this.themeMix("bgFar"));
+    bg.addColorStop(0.55, this.themeMix("bgFar"));
     bg.addColorStop(1, this.themeMix("bgNear"));
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // motion blur veil at high speed
-    const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
-    if (this.phase === "playing" && speedPct > 0.4) {
-      ctx.fillStyle = `rgba(0,0,0,${(speedPct - 0.4) * 0.12})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-
     this.renderBackground();
+
+    // atmospheric fog band behind rope
+    const fog = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.75);
+    fog.addColorStop(0, "rgba(0,0,0,0)");
+    fog.addColorStop(0.5, this.rgba(this.themeMix("accent"), 0.06));
+    fog.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = fog;
+    ctx.fillRect(0, H * 0.35, W, H * 0.4);
+
     this.renderRope();
-    
     this.renderObstacles();
     this.renderParticles();
     this.renderNinja();
+
+    // speed lines at high speed (replaces flat gray veil)
+    const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
+    if (this.phase === "playing" && speedPct > 0.35) {
+      const intensity = (speedPct - 0.35) / 0.65;
+      ctx.strokeStyle = `rgba(255,255,255,${intensity * 0.18})`;
+      ctx.lineWidth = 1;
+      const seed = (this.worldY * 40) | 0;
+      const lineCount = 6 + Math.floor(intensity * 8);
+      for (let i = 0; i < lineCount; i++) {
+        const s = ((seed + i * 977) % 1000) / 1000;
+        const lx = s * W;
+        const ly = ((seed * 0.7 + i * 613) % H) * 1;
+        const len = 30 + intensity * 60;
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(lx, ly + len);
+        ctx.stroke();
+      }
+    }
+
+    // vignette
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
 
     // hit flash
     if (this.hitFlash > 0) {
@@ -666,10 +694,10 @@ export class Game {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // invuln vignette
+    // invuln shimmer
     const now = performance.now() / 1000;
     if (now < this.invulnUntil) {
-      const a = (Math.sin(now * 30) + 1) * 0.08;
+      const a = (Math.sin(now * 30) + 1) * 0.06;
       ctx.fillStyle = `rgba(255,255,255,${a})`;
       ctx.fillRect(0, 0, W, H);
     }
@@ -682,82 +710,104 @@ export class Game {
     const beam = this.themeMix("beam");
     const accent = this.themeMix("accent");
     const lantern = this.themeMix("lantern");
-    // Side stone columns
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.fillRect(0, 0, 32, H);
-    ctx.fillRect(W - 32, 0, 32, H);
 
-    // Horizontal beams scrolling
-    const beamSpacing = 120;
+    // Soft parallax side pillars (gradient, no hard edges)
+    const leftG = ctx.createLinearGradient(0, 0, 48, 0);
+    leftG.addColorStop(0, "rgba(0,0,0,0.55)");
+    leftG.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = leftG;
+    ctx.fillRect(0, 0, 48, H);
+    const rightG = ctx.createLinearGradient(W - 48, 0, W, 0);
+    rightG.addColorStop(0, "rgba(0,0,0,0)");
+    rightG.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.fillStyle = rightG;
+    ctx.fillRect(W - 48, 0, 48, H);
+
+    // Faint horizontal rings scrolling (subtle depth, not chunky beams)
+    const beamSpacing = 140;
     const offset = ((-this.worldY * 18) % beamSpacing + beamSpacing) % beamSpacing;
-    ctx.fillStyle = beam;
     for (let y = -beamSpacing + offset; y < H + beamSpacing; y += beamSpacing) {
-      ctx.fillRect(0, y, W, 14);
+      const ringG = ctx.createLinearGradient(0, y, 0, y + 8);
+      ringG.addColorStop(0, this.rgba(beam, 0));
+      ringG.addColorStop(0.5, this.rgba(beam, 0.55));
+      ringG.addColorStop(1, this.rgba(beam, 0));
+      ctx.fillStyle = ringG;
+      ctx.fillRect(0, y, W, 8);
+
       // lantern on alternating beams
       const idx = Math.round((y - this.worldY * 18) / beamSpacing);
       if (idx % 2 === 0) {
-        const lx = idx % 4 === 0 ? 48 : W - 48;
-        ctx.fillStyle = "rgba(0,0,0,0.4)";
-        ctx.fillRect(lx - 1, y - 18, 2, 18);
-        // lantern glow
-        const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 38);
-        g.addColorStop(0, this.rgba(lantern, 0.8));
-        g.addColorStop(1, "transparent");
+        const lx = idx % 4 === 0 ? 40 : W - 40;
+        const pulse = 0.7 + Math.sin(performance.now() / 400 + idx) * 0.15;
+        // outer bloom
+        const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 60);
+        g.addColorStop(0, this.rgba(lantern, 0.6 * pulse));
+        g.addColorStop(0.4, this.rgba(lantern, 0.2 * pulse));
+        g.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = g;
-        ctx.fillRect(lx - 40, y - 60, 80, 80);
-        ctx.fillStyle = lantern;
+        ctx.fillRect(lx - 60, y - 80, 120, 120);
+        // core
+        ctx.fillStyle = this.rgba(lantern, 0.95);
         ctx.beginPath();
-        ctx.ellipse(lx, y - 28, 7, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(lx, y - 26, 5, 8, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = beam;
       }
     }
 
-    // banner accents (occasional)
-    const bannerSpacing = 280;
+    // vertical accent banner (soft, faded)
+    const bannerSpacing = 320;
     const boff = ((-this.worldY * 18) % bannerSpacing + bannerSpacing) % bannerSpacing;
     for (let y = -bannerSpacing + boff; y < H + bannerSpacing; y += bannerSpacing) {
-      ctx.fillStyle = accent;
-      ctx.fillRect(W / 2 - 6, y, 12, 56);
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
-      ctx.fillRect(W / 2 - 6, y + 56, 12, 6);
+      const bg2 = ctx.createLinearGradient(0, y, 0, y + 70);
+      bg2.addColorStop(0, this.rgba(accent, 0.65));
+      bg2.addColorStop(1, this.rgba(accent, 0));
+      ctx.fillStyle = bg2;
+      ctx.fillRect(W / 2 - 5, y, 10, 70);
     }
   }
+
 
   private renderRope() {
     const { ctx, W, H } = this;
     const rope = findRope(this.save.equipped.rope);
     const x = W / 2;
     const color = rope.color;
-    if (rope.glow) {
-      ctx.shadowBlur = 16;
-      ctx.shadowColor = rope.glow;
-    }
-    ctx.strokeStyle = color;
-    ctx.lineWidth = rope.style === "chain" ? 5 : 6;
+
+    // outer glow
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = rope.glow || this.rgba(this.themeMix("accent"), 0.6);
+
+    // main rope with vertical gradient (highlight in middle)
+    const rg = ctx.createLinearGradient(x - 5, 0, x + 5, 0);
+    rg.addColorStop(0, "rgba(0,0,0,0.55)");
+    rg.addColorStop(0.5, color);
+    rg.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.strokeStyle = rg;
+    ctx.lineWidth = rope.style === "chain" ? 6 : 7;
+    ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, H);
     ctx.stroke();
     ctx.shadowBlur = 0;
 
+    // subtle inner highlight line
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5, 0);
+    ctx.lineTo(x - 1.5, H);
+    ctx.stroke();
+
     // braid hatching
     if (rope.style === "rope" || rope.style === "vine") {
-      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.strokeStyle = "rgba(0,0,0,0.4)";
       ctx.lineWidth = 1;
       const off = ((-this.worldY * 50) % 10 + 10) % 10;
       for (let y = -10 + off; y < H; y += 10) {
         ctx.beginPath();
         ctx.moveTo(x - 3, y);
         ctx.lineTo(x + 3, y + 5);
-        ctx.stroke();
-      }
-    } else if (rope.style === "chain") {
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      const off = ((-this.worldY * 50) % 12 + 12) % 12;
-      for (let y = -12 + off; y < H; y += 12) {
-        ctx.beginPath();
-        ctx.ellipse(x, y, 3, 5, 0, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
@@ -767,6 +817,8 @@ export class Game {
     // ninja is at H*0.55; obstacles approach from below and rise upward
     return this.H * 0.55 + (yMeters - this.worldY) * 28;
   }
+
+
 
   private renderObstacles() {
     const { ctx, W } = this;
@@ -779,21 +831,34 @@ export class Game {
         ctx.save();
         ctx.translate(x, sy);
         switch (o.kind) {
-          case "spike":
-            ctx.fillStyle = "#c5c0b3";
+          case "spike": {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(255,90,90,0.7)";
+            const g = ctx.createLinearGradient(side * -14, 0, side * 14, 0);
+            g.addColorStop(0, "#e8e2d0");
+            g.addColorStop(1, "#8f877a");
+            ctx.fillStyle = g;
             ctx.beginPath();
             ctx.moveTo(side * -14, 0);
             ctx.lineTo(side * 14, -10);
             ctx.lineTo(side * 14, 10);
             ctx.closePath();
             ctx.fill();
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.fillRect(side * 14 - 2, -12, 4, 24);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "rgba(0,0,0,0.45)";
+            this.roundedRect(side * 14 - 2, -12, 4, 24, 1.5);
+            ctx.fill();
             break;
+          }
           case "blade": {
             const r = 22;
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = "rgba(180,200,255,0.7)";
             ctx.rotate(o.phase);
-            ctx.fillStyle = "#b8b0a0";
+            const g = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
+            g.addColorStop(0, "#f4f0e6");
+            g.addColorStop(1, "#7d7568");
+            ctx.fillStyle = g;
             for (let i = 0; i < 4; i++) {
               ctx.rotate(Math.PI / 2);
               ctx.beginPath();
@@ -803,35 +868,45 @@ export class Game {
               ctx.closePath();
               ctx.fill();
             }
-            ctx.fillStyle = "#4a4540";
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#2a2620";
             ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ffb86b";
+            ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
             break;
           }
           case "fire": {
-            const flick = 0.7 + Math.sin(o.phase * 3) * 0.2;
-            const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 22);
-            g.addColorStop(0, `rgba(255,220,120,${flick})`);
-            g.addColorStop(0.5, `rgba(255,120,40,${flick * 0.8})`);
-            g.addColorStop(1, "transparent");
+            const flick = 0.75 + Math.sin(o.phase * 3) * 0.2;
+            const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
+            g.addColorStop(0, `rgba(255,240,180,${flick})`);
+            g.addColorStop(0.35, `rgba(255,150,60,${flick * 0.9})`);
+            g.addColorStop(0.7, `rgba(255,80,30,${flick * 0.5})`);
+            g.addColorStop(1, "rgba(0,0,0,0)");
             ctx.fillStyle = g;
-            ctx.fillRect(-26, -26, 52, 52);
-            ctx.fillStyle = "#3a2418";
-            ctx.fillRect(-12, 10, 24, 4);
+            ctx.fillRect(-30, -30, 60, 60);
+            ctx.fillStyle = "#2a1810";
+            this.roundedRect(-12, 10, 24, 5, 2);
+            ctx.fill();
             break;
           }
-          case "arrow":
+          case "arrow": {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(255,180,80,0.6)";
             ctx.fillStyle = "#8a6b40";
-            ctx.fillRect(side * -16, -2, 32, 4);
-            ctx.fillStyle = "#d6c79a";
+            this.roundedRect(side * -16, -2, 32, 4, 1.5);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#f0e0a8";
             ctx.beginPath();
             ctx.moveTo(side * 16, -6);
-            ctx.lineTo(side * 22, 0);
+            ctx.lineTo(side * 24, 0);
             ctx.lineTo(side * 16, 6);
             ctx.closePath();
             ctx.fill();
             ctx.fillStyle = "#3a2418";
             ctx.fillRect(side * -18, -4, 3, 8);
             break;
+          }
         }
         ctx.restore();
       };
@@ -892,33 +967,71 @@ export class Game {
     const x = W / 2 + this.ninjaSide * 22;
     const y = H * 0.55;
     const spin = this.ninjaSpin;
+    const now = performance.now() / 1000;
+    const invuln = now < this.invulnUntil;
+
+    // soft ground shadow / rim glow behind ninja
+    const halo = ctx.createRadialGradient(x, y, 0, x, y, 40);
+    halo.addColorStop(0, "rgba(0,0,0,0.45)");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(x - 40, y - 40, 80, 80);
+
     ctx.save();
     ctx.translate(x, y);
     if (spin > 0) {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
-    // body
-    ctx.fillStyle = ch.body;
-    this.roundedRect(-10, -14, 20, 26, 5);
+    // subtle rim glow
+    ctx.shadowBlur = invuln ? 20 : 10;
+    ctx.shadowColor = invuln ? "rgba(255,255,255,0.9)" : this.rgba(ch.sash, 0.7);
+
+    // body with gradient
+    const bg = ctx.createLinearGradient(-10, -14, 10, 12);
+    bg.addColorStop(0, ch.body);
+    bg.addColorStop(1, this.lerpColor(ch.body, "#000000", 0.35));
+    ctx.fillStyle = bg;
+    this.roundedRect(-10, -14, 20, 26, 6);
     ctx.fill();
+
     // head
-    ctx.fillStyle = ch.body;
+    const hg = ctx.createRadialGradient(-2, -18, 1, 0, -16, 9);
+    hg.addColorStop(0, this.lerpColor(ch.body, "#ffffff", 0.15));
+    hg.addColorStop(1, ch.body);
+    ctx.fillStyle = hg;
     ctx.beginPath();
     ctx.arc(0, -16, 8, 0, Math.PI * 2);
     ctx.fill();
-    // mask band / eyes
+
+    ctx.shadowBlur = 0;
+
+    // mask band
     ctx.fillStyle = ch.trim;
-    ctx.fillRect(-7, -18, 14, 3);
-    ctx.fillStyle = "#fff";
+    this.roundedRect(-7, -18, 14, 3, 1);
+    ctx.fill();
+    // glowing eyes
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = "rgba(255,220,120,0.9)";
+    ctx.fillStyle = "#fff8d0";
     ctx.fillRect(-5, -18, 3, 2);
     ctx.fillRect(2, -18, 3, 2);
+    ctx.shadowBlur = 0;
+
     // sash
-    ctx.fillStyle = ch.sash;
-    ctx.fillRect(-10, -4, 20, 4);
+    const sg = ctx.createLinearGradient(-10, -4, 10, 0);
+    sg.addColorStop(0, ch.sash);
+    sg.addColorStop(1, this.lerpColor(ch.sash, "#ffffff", 0.2));
+    ctx.fillStyle = sg;
+    this.roundedRect(-10, -4, 20, 4, 1.5);
+    ctx.fill();
+
     // arm gripping rope
     ctx.fillStyle = ch.body;
-    ctx.fillRect(this.ninjaSide * -12, -8, 6, 4);
+    this.roundedRect(this.ninjaSide * -12, -8, 6, 4, 1.5);
+    ctx.fill();
+
     ctx.restore();
   }
 }
+
