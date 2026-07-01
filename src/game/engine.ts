@@ -322,8 +322,6 @@ export class Game {
       // still drift particles softly so menu has petals
       this.updateParticles(dt);
       audio.updateMusic((this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED));
-      // theme petals on menu
-      if (this.phase === "menu" && Math.random() < 0.1) this.spawnPetal();
       return;
     }
 
