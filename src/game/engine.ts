@@ -322,8 +322,6 @@ export class Game {
       // still drift particles softly so menu has petals
       this.updateParticles(dt);
       audio.updateMusic((this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED));
-      // theme petals on menu
-      if (this.phase === "menu" && Math.random() < 0.1) this.spawnPetal();
       return;
     }
 
@@ -359,8 +357,6 @@ export class Game {
     // trail
     if (Math.random() < 0.6) this.spawnTrail();
 
-    // petals ambient
-    if (Math.random() < 0.05) this.spawnPetal();
 
     // shake decay
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 12);
@@ -477,7 +473,6 @@ export class Game {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       if (p.kind === "smoke") { p.vx *= 0.94; p.vy *= 0.94; }
-      if (p.kind === "petal") { p.vx += Math.sin(p.life * 4) * 4 * dt; p.vy += 6 * dt; }
     }
   }
 
@@ -567,21 +562,6 @@ export class Game {
     p.color = "#ff5a4a";
     p.size = 4;
   }
-  private spawnPetal() {
-    const p = this.getParticle();
-    if (!p) return;
-    p.active = true;
-    p.kind = "petal";
-    p.x = Math.random() * this.W;
-    p.y = -10;
-    p.vx = -10 + Math.random() * 20;
-    p.vy = 30 + Math.random() * 30;
-    p.life = 6;
-    p.max = 6;
-    p.color = THEMES[this.themeIndex].id === "bamboo" ? "#cdebbf" : "#ffc8d6";
-    p.size = 3 + Math.random() * 2;
-  }
-
   // ---------- render ----------
 
   private lerpColor(a: string, b: string, t: number): string {
@@ -709,7 +689,6 @@ export class Game {
     const { ctx, W, H } = this;
     const beam = this.themeMix("beam");
     const accent = this.themeMix("accent");
-    const lantern = this.themeMix("lantern");
 
     // Soft parallax side pillars (gradient, no hard edges)
     const leftG = ctx.createLinearGradient(0, 0, 48, 0);
@@ -734,24 +713,6 @@ export class Game {
       ctx.fillStyle = ringG;
       ctx.fillRect(0, y, W, 8);
 
-      // lantern on alternating beams
-      const idx = Math.round((y - this.worldY * 18) / beamSpacing);
-      if (idx % 2 === 0) {
-        const lx = idx % 4 === 0 ? 40 : W - 40;
-        const pulse = 0.7 + Math.sin(performance.now() / 400 + idx) * 0.15;
-        // outer bloom
-        const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 60);
-        g.addColorStop(0, this.rgba(lantern, 0.6 * pulse));
-        g.addColorStop(0.4, this.rgba(lantern, 0.2 * pulse));
-        g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(lx - 60, y - 80, 120, 120);
-        // core
-        ctx.fillStyle = this.rgba(lantern, 0.95);
-        ctx.beginPath();
-        ctx.ellipse(lx, y - 26, 5, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
 
     // vertical accent banner (soft, faded)
@@ -950,12 +911,6 @@ export class Game {
         ctx.globalAlpha = a;
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-      } else if (p.kind === "petal") {
-        ctx.globalAlpha = Math.min(1, a);
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.ellipse(p.x, p.y, p.size, p.size * 0.6, Math.sin(p.life * 2), 0, Math.PI * 2);
-        ctx.fill();
       }
     }
     ctx.globalAlpha = 1;

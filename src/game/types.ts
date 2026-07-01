@@ -30,7 +30,7 @@ export interface Particle {
   max: number;
   color: string;
   size: number;
-  kind: "smoke" | "spark" | "hit" | "petal";
+  kind: "smoke" | "spark" | "hit";
 }
 
 export type GamePhase = "menu" | "playing" | "paused" | "gameover" | "shop" | "settings";
