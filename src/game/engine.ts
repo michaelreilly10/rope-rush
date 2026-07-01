@@ -632,33 +632,61 @@ export class Game {
     // shake
     let ox = 0, oy = 0;
     if (this.shake > 0) {
-      ox = (Math.random() - 0.5) * this.shake * 12;
-      oy = (Math.random() - 0.5) * this.shake * 12;
+      ox = (Math.random() - 0.5) * this.shake * 10;
+      oy = (Math.random() - 0.5) * this.shake * 10;
     }
     ctx.save();
     ctx.translate(ox, oy);
 
-    // bg gradient
+    // bg gradient (deeper, richer)
     const bg = ctx.createLinearGradient(0, 0, 0, H);
     bg.addColorStop(0, this.themeMix("bg"));
-    bg.addColorStop(0.6, this.themeMix("bgFar"));
+    bg.addColorStop(0.55, this.themeMix("bgFar"));
     bg.addColorStop(1, this.themeMix("bgNear"));
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // motion blur veil at high speed
-    const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
-    if (this.phase === "playing" && speedPct > 0.4) {
-      ctx.fillStyle = `rgba(0,0,0,${(speedPct - 0.4) * 0.12})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-
     this.renderBackground();
+
+    // atmospheric fog band behind rope
+    const fog = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.75);
+    fog.addColorStop(0, "rgba(0,0,0,0)");
+    fog.addColorStop(0.5, this.rgba(this.themeMix("accent"), 0.06));
+    fog.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = fog;
+    ctx.fillRect(0, H * 0.35, W, H * 0.4);
+
     this.renderRope();
-    
     this.renderObstacles();
     this.renderParticles();
     this.renderNinja();
+
+    // speed lines at high speed (replaces flat gray veil)
+    const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
+    if (this.phase === "playing" && speedPct > 0.35) {
+      const intensity = (speedPct - 0.35) / 0.65;
+      ctx.strokeStyle = `rgba(255,255,255,${intensity * 0.18})`;
+      ctx.lineWidth = 1;
+      const seed = (this.worldY * 40) | 0;
+      const lineCount = 6 + Math.floor(intensity * 8);
+      for (let i = 0; i < lineCount; i++) {
+        const s = ((seed + i * 977) % 1000) / 1000;
+        const lx = s * W;
+        const ly = ((seed * 0.7 + i * 613) % H) * 1;
+        const len = 30 + intensity * 60;
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(lx, ly + len);
+        ctx.stroke();
+      }
+    }
+
+    // vignette
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
 
     // hit flash
     if (this.hitFlash > 0) {
@@ -666,10 +694,10 @@ export class Game {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // invuln vignette
+    // invuln shimmer
     const now = performance.now() / 1000;
     if (now < this.invulnUntil) {
-      const a = (Math.sin(now * 30) + 1) * 0.08;
+      const a = (Math.sin(now * 30) + 1) * 0.06;
       ctx.fillStyle = `rgba(255,255,255,${a})`;
       ctx.fillRect(0, 0, W, H);
     }
@@ -682,47 +710,62 @@ export class Game {
     const beam = this.themeMix("beam");
     const accent = this.themeMix("accent");
     const lantern = this.themeMix("lantern");
-    // Side stone columns
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
-    ctx.fillRect(0, 0, 32, H);
-    ctx.fillRect(W - 32, 0, 32, H);
 
-    // Horizontal beams scrolling
-    const beamSpacing = 120;
+    // Soft parallax side pillars (gradient, no hard edges)
+    const leftG = ctx.createLinearGradient(0, 0, 48, 0);
+    leftG.addColorStop(0, "rgba(0,0,0,0.55)");
+    leftG.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = leftG;
+    ctx.fillRect(0, 0, 48, H);
+    const rightG = ctx.createLinearGradient(W - 48, 0, W, 0);
+    rightG.addColorStop(0, "rgba(0,0,0,0)");
+    rightG.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.fillStyle = rightG;
+    ctx.fillRect(W - 48, 0, 48, H);
+
+    // Faint horizontal rings scrolling (subtle depth, not chunky beams)
+    const beamSpacing = 140;
     const offset = ((-this.worldY * 18) % beamSpacing + beamSpacing) % beamSpacing;
-    ctx.fillStyle = beam;
     for (let y = -beamSpacing + offset; y < H + beamSpacing; y += beamSpacing) {
-      ctx.fillRect(0, y, W, 14);
+      const ringG = ctx.createLinearGradient(0, y, 0, y + 8);
+      ringG.addColorStop(0, this.rgba(beam, 0));
+      ringG.addColorStop(0.5, this.rgba(beam, 0.55));
+      ringG.addColorStop(1, this.rgba(beam, 0));
+      ctx.fillStyle = ringG;
+      ctx.fillRect(0, y, W, 8);
+
       // lantern on alternating beams
       const idx = Math.round((y - this.worldY * 18) / beamSpacing);
       if (idx % 2 === 0) {
-        const lx = idx % 4 === 0 ? 48 : W - 48;
-        ctx.fillStyle = "rgba(0,0,0,0.4)";
-        ctx.fillRect(lx - 1, y - 18, 2, 18);
-        // lantern glow
-        const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 38);
-        g.addColorStop(0, this.rgba(lantern, 0.8));
-        g.addColorStop(1, "transparent");
+        const lx = idx % 4 === 0 ? 40 : W - 40;
+        const pulse = 0.7 + Math.sin(performance.now() / 400 + idx) * 0.15;
+        // outer bloom
+        const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 60);
+        g.addColorStop(0, this.rgba(lantern, 0.6 * pulse));
+        g.addColorStop(0.4, this.rgba(lantern, 0.2 * pulse));
+        g.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = g;
-        ctx.fillRect(lx - 40, y - 60, 80, 80);
-        ctx.fillStyle = lantern;
+        ctx.fillRect(lx - 60, y - 80, 120, 120);
+        // core
+        ctx.fillStyle = this.rgba(lantern, 0.95);
         ctx.beginPath();
-        ctx.ellipse(lx, y - 28, 7, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(lx, y - 26, 5, 8, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = beam;
       }
     }
 
-    // banner accents (occasional)
-    const bannerSpacing = 280;
+    // vertical accent banner (soft, faded)
+    const bannerSpacing = 320;
     const boff = ((-this.worldY * 18) % bannerSpacing + bannerSpacing) % bannerSpacing;
     for (let y = -bannerSpacing + boff; y < H + bannerSpacing; y += bannerSpacing) {
-      ctx.fillStyle = accent;
-      ctx.fillRect(W / 2 - 6, y, 12, 56);
-      ctx.fillStyle = "rgba(0,0,0,0.4)";
-      ctx.fillRect(W / 2 - 6, y + 56, 12, 6);
+      const bg2 = ctx.createLinearGradient(0, y, 0, y + 70);
+      bg2.addColorStop(0, this.rgba(accent, 0.65));
+      bg2.addColorStop(1, this.rgba(accent, 0));
+      ctx.fillStyle = bg2;
+      ctx.fillRect(W / 2 - 5, y, 10, 70);
     }
   }
+
 
   private renderRope() {
     const { ctx, W, H } = this;
