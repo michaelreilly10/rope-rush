@@ -967,33 +967,71 @@ export class Game {
     const x = W / 2 + this.ninjaSide * 22;
     const y = H * 0.55;
     const spin = this.ninjaSpin;
+    const now = performance.now() / 1000;
+    const invuln = now < this.invulnUntil;
+
+    // soft ground shadow / rim glow behind ninja
+    const halo = ctx.createRadialGradient(x, y, 0, x, y, 40);
+    halo.addColorStop(0, "rgba(0,0,0,0.45)");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(x - 40, y - 40, 80, 80);
+
     ctx.save();
     ctx.translate(x, y);
     if (spin > 0) {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
-    // body
-    ctx.fillStyle = ch.body;
-    this.roundedRect(-10, -14, 20, 26, 5);
+    // subtle rim glow
+    ctx.shadowBlur = invuln ? 20 : 10;
+    ctx.shadowColor = invuln ? "rgba(255,255,255,0.9)" : this.rgba(ch.sash, 0.7);
+
+    // body with gradient
+    const bg = ctx.createLinearGradient(-10, -14, 10, 12);
+    bg.addColorStop(0, ch.body);
+    bg.addColorStop(1, this.lerpColor(ch.body, "#000000", 0.35));
+    ctx.fillStyle = bg;
+    this.roundedRect(-10, -14, 20, 26, 6);
     ctx.fill();
+
     // head
-    ctx.fillStyle = ch.body;
+    const hg = ctx.createRadialGradient(-2, -18, 1, 0, -16, 9);
+    hg.addColorStop(0, this.lerpColor(ch.body, "#ffffff", 0.15));
+    hg.addColorStop(1, ch.body);
+    ctx.fillStyle = hg;
     ctx.beginPath();
     ctx.arc(0, -16, 8, 0, Math.PI * 2);
     ctx.fill();
-    // mask band / eyes
+
+    ctx.shadowBlur = 0;
+
+    // mask band
     ctx.fillStyle = ch.trim;
-    ctx.fillRect(-7, -18, 14, 3);
-    ctx.fillStyle = "#fff";
+    this.roundedRect(-7, -18, 14, 3, 1);
+    ctx.fill();
+    // glowing eyes
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = "rgba(255,220,120,0.9)";
+    ctx.fillStyle = "#fff8d0";
     ctx.fillRect(-5, -18, 3, 2);
     ctx.fillRect(2, -18, 3, 2);
+    ctx.shadowBlur = 0;
+
     // sash
-    ctx.fillStyle = ch.sash;
-    ctx.fillRect(-10, -4, 20, 4);
+    const sg = ctx.createLinearGradient(-10, -4, 10, 0);
+    sg.addColorStop(0, ch.sash);
+    sg.addColorStop(1, this.lerpColor(ch.sash, "#ffffff", 0.2));
+    ctx.fillStyle = sg;
+    this.roundedRect(-10, -4, 20, 4, 1.5);
+    ctx.fill();
+
     // arm gripping rope
     ctx.fillStyle = ch.body;
-    ctx.fillRect(this.ninjaSide * -12, -8, 6, 4);
+    this.roundedRect(this.ninjaSide * -12, -8, 6, 4, 1.5);
+    ctx.fill();
+
     ctx.restore();
   }
 }
+
