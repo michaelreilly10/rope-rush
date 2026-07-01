@@ -772,35 +772,42 @@ export class Game {
     const rope = findRope(this.save.equipped.rope);
     const x = W / 2;
     const color = rope.color;
-    if (rope.glow) {
-      ctx.shadowBlur = 16;
-      ctx.shadowColor = rope.glow;
-    }
-    ctx.strokeStyle = color;
-    ctx.lineWidth = rope.style === "chain" ? 5 : 6;
+
+    // outer glow
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = rope.glow || this.rgba(this.themeMix("accent"), 0.6);
+
+    // main rope with vertical gradient (highlight in middle)
+    const rg = ctx.createLinearGradient(x - 5, 0, x + 5, 0);
+    rg.addColorStop(0, "rgba(0,0,0,0.55)");
+    rg.addColorStop(0.5, color);
+    rg.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.strokeStyle = rg;
+    ctx.lineWidth = rope.style === "chain" ? 6 : 7;
+    ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, H);
     ctx.stroke();
     ctx.shadowBlur = 0;
 
+    // subtle inner highlight line
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5, 0);
+    ctx.lineTo(x - 1.5, H);
+    ctx.stroke();
+
     // braid hatching
     if (rope.style === "rope" || rope.style === "vine") {
-      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.strokeStyle = "rgba(0,0,0,0.4)";
       ctx.lineWidth = 1;
       const off = ((-this.worldY * 50) % 10 + 10) % 10;
       for (let y = -10 + off; y < H; y += 10) {
         ctx.beginPath();
         ctx.moveTo(x - 3, y);
         ctx.lineTo(x + 3, y + 5);
-        ctx.stroke();
-      }
-    } else if (rope.style === "chain") {
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      const off = ((-this.worldY * 50) % 12 + 12) % 12;
-      for (let y = -12 + off; y < H; y += 12) {
-        ctx.beginPath();
-        ctx.ellipse(x, y, 3, 5, 0, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
@@ -810,6 +817,8 @@ export class Game {
     // ninja is at H*0.55; obstacles approach from below and rise upward
     return this.H * 0.55 + (yMeters - this.worldY) * 28;
   }
+
+
 
   private renderObstacles() {
     const { ctx, W } = this;
