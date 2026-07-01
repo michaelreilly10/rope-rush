@@ -563,21 +563,6 @@ export class Game {
     p.color = "#ff5a4a";
     p.size = 4;
   }
-  private spawnPetal() {
-    const p = this.getParticle();
-    if (!p) return;
-    p.active = true;
-    p.kind = "petal";
-    p.x = Math.random() * this.W;
-    p.y = -10;
-    p.vx = -10 + Math.random() * 20;
-    p.vy = 30 + Math.random() * 30;
-    p.life = 6;
-    p.max = 6;
-    p.color = THEMES[this.themeIndex].id === "bamboo" ? "#cdebbf" : "#ffc8d6";
-    p.size = 3 + Math.random() * 2;
-  }
-
   // ---------- render ----------
 
   private lerpColor(a: string, b: string, t: number): string {
