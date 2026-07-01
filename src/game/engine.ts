@@ -734,24 +734,6 @@ export class Game {
       ctx.fillStyle = ringG;
       ctx.fillRect(0, y, W, 8);
 
-      // lantern on alternating beams
-      const idx = Math.round((y - this.worldY * 18) / beamSpacing);
-      if (idx % 2 === 0) {
-        const lx = idx % 4 === 0 ? 40 : W - 40;
-        const pulse = 0.7 + Math.sin(performance.now() / 400 + idx) * 0.15;
-        // outer bloom
-        const g = ctx.createRadialGradient(lx, y - 24, 0, lx, y - 24, 60);
-        g.addColorStop(0, this.rgba(lantern, 0.6 * pulse));
-        g.addColorStop(0.4, this.rgba(lantern, 0.2 * pulse));
-        g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(lx - 60, y - 80, 120, 120);
-        // core
-        ctx.fillStyle = this.rgba(lantern, 0.95);
-        ctx.beginPath();
-        ctx.ellipse(lx, y - 26, 5, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
 
     // vertical accent banner (soft, faded)
