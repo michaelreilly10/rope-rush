@@ -235,7 +235,7 @@ export class Game {
     this.spinDir = this.ninjaSide;
     audio.sfx("swap");
     this.spawnSwapPuff();
-    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.(8);
+    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.(12);
   }
 
   continueWithAd() {
