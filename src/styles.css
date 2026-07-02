@@ -5,12 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @utility font-display {
-  font-family: "Bangers", "Impact", system-ui, sans-serif;
-  letter-spacing: 0.04em;
+  font-family: "Archivo Black", "Impact", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 :root {
-  --rr-font-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --rr-font-body: "Hind", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
