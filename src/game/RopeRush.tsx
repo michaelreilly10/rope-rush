@@ -51,14 +51,31 @@ export function RopeRush() {
       {hud && game && (
         <>
           {hud.phase === "menu" && (
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-              <h1 className="font-display text-6xl text-white drop-shadow-lg">
-                Rope<span className="text-rose-400">Rush</span>
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/30 via-black/50 to-black/80">
+              <div className="text-[10px] uppercase tracking-[0.5em] text-cyan-300/80">One-Tap Descent</div>
+              <h1
+                className="mt-3 font-display text-7xl leading-none text-white"
+                style={{
+                  textShadow:
+                    "0 0 12px rgba(0,217,255,0.9), 0 0 32px rgba(0,217,255,0.55), 0 0 60px rgba(255,46,99,0.35)",
+                }}
+              >
+                ROPE<span className="text-[#ff2e63]">RUSH</span>
               </h1>
               {hud.best > 0 && (
-                <div className="mt-2 text-sm text-white/70">Best {hud.best}m</div>
+                <div className="mt-4 rounded-full border border-cyan-300/30 bg-black/40 px-4 py-1 text-xs uppercase tracking-widest text-cyan-200/80">
+                  Best · {hud.best}m
+                </div>
               )}
-              <div className="mt-8 animate-pulse font-display text-2xl text-white">TAP TO START</div>
+              <div
+                className="mt-10 animate-pulse font-display text-2xl tracking-widest text-white"
+                style={{ textShadow: "0 0 10px rgba(0,217,255,0.9)" }}
+              >
+                TAP TO START
+              </div>
+              <div className="mt-3 text-[11px] uppercase tracking-widest text-white/40">
+                Tap to switch sides · Dodge everything
+              </div>
             </div>
           )}
           {hud.phase === "playing" && <HUD hud={hud} onPause={() => game.pause()} />}
