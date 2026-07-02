@@ -25,34 +25,34 @@ const SPEED_ACCEL = 0.18; // per second
 
 const THEMES: ThemePalette[] = [
   {
-    id: "castle",
-    name: "Castle",
-    bg: "#120a24",
-    bgFar: "#1e1444",
-    bgNear: "#3a2168",
-    beam: "#4a2a52",
-    accent: "#ff5577",
-    lantern: "#ffb86b",
+    id: "grid",
+    name: "Neo Grid",
+    bg: "#05070f",
+    bgFar: "#0a0e27",
+    bgNear: "#1a1f4e",
+    beam: "#1e2a6b",
+    accent: "#00d9ff",
+    lantern: "#ff2e63",
   },
   {
-    id: "temple",
-    name: "Temple",
-    bg: "#0e1a24",
-    bgFar: "#183048",
-    bgNear: "#2a5578",
-    beam: "#3d2a1c",
-    accent: "#ffcf5c",
-    lantern: "#ffe29a",
+    id: "hive",
+    name: "Neon Hive",
+    bg: "#07030f",
+    bgFar: "#160a2e",
+    bgNear: "#2e1466",
+    beam: "#3a1a6b",
+    accent: "#ff2e63",
+    lantern: "#c74dff",
   },
   {
-    id: "bamboo",
-    name: "Bamboo Forest",
-    bg: "#0a1a14",
-    bgFar: "#13402a",
-    bgNear: "#256b45",
-    beam: "#4a6b32",
-    accent: "#b8ee78",
-    lantern: "#f9f2b8",
+    id: "circuit",
+    name: "Circuit Vault",
+    bg: "#020a0a",
+    bgFar: "#062a2e",
+    bgNear: "#0a4a52",
+    beam: "#0e6a70",
+    accent: "#3affbf",
+    lantern: "#00d9ff",
   },
 ];
 
@@ -235,7 +235,7 @@ export class Game {
     this.spinDir = this.ninjaSide;
     audio.sfx("swap");
     this.spawnSwapPuff();
-    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.(8);
+    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.(12);
   }
 
   continueWithAd() {
@@ -487,7 +487,7 @@ export class Game {
     this.speed = Math.max(BASE_SPEED, MAX_SPEED * resetPct(this.worldY));
     // hit burst
     for (let i = 0; i < 14; i++) this.emitHit();
-    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.([20, 30, 20]);
+    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.([40, 40, 60, 40, 80]);
     if (this.lives <= 0) this.endRun();
   }
 
@@ -689,42 +689,69 @@ export class Game {
     const { ctx, W, H } = this;
     const beam = this.themeMix("beam");
     const accent = this.themeMix("accent");
+    const lantern = this.themeMix("lantern");
 
-    // Soft parallax side pillars (gradient, no hard edges)
-    const leftG = ctx.createLinearGradient(0, 0, 48, 0);
-    leftG.addColorStop(0, "rgba(0,0,0,0.55)");
+    // Soft parallax side pillars (dark neon edge)
+    const leftG = ctx.createLinearGradient(0, 0, 60, 0);
+    leftG.addColorStop(0, "rgba(0,0,0,0.7)");
     leftG.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = leftG;
-    ctx.fillRect(0, 0, 48, H);
-    const rightG = ctx.createLinearGradient(W - 48, 0, W, 0);
+    ctx.fillRect(0, 0, 60, H);
+    const rightG = ctx.createLinearGradient(W - 60, 0, W, 0);
     rightG.addColorStop(0, "rgba(0,0,0,0)");
-    rightG.addColorStop(1, "rgba(0,0,0,0.55)");
+    rightG.addColorStop(1, "rgba(0,0,0,0.7)");
     ctx.fillStyle = rightG;
-    ctx.fillRect(W - 48, 0, 48, H);
+    ctx.fillRect(W - 60, 0, 60, H);
 
-    // Faint horizontal rings scrolling (subtle depth, not chunky beams)
-    const beamSpacing = 140;
-    const offset = ((-this.worldY * 18) % beamSpacing + beamSpacing) % beamSpacing;
-    for (let y = -beamSpacing + offset; y < H + beamSpacing; y += beamSpacing) {
-      const ringG = ctx.createLinearGradient(0, y, 0, y + 8);
-      ringG.addColorStop(0, this.rgba(beam, 0));
-      ringG.addColorStop(0.5, this.rgba(beam, 0.55));
-      ringG.addColorStop(1, this.rgba(beam, 0));
-      ctx.fillStyle = ringG;
-      ctx.fillRect(0, y, W, 8);
-
+    // Vertical cyber-grid columns (perspective towards center)
+    ctx.strokeStyle = this.rgba(beam, 0.55);
+    ctx.lineWidth = 1;
+    const cols = 6;
+    for (let i = 1; i <= cols; i++) {
+      const t = i / (cols + 1);
+      const lx = t * W;
+      const cx = W / 2;
+      // slight perspective converging toward vanishing point at horizon
+      ctx.beginPath();
+      ctx.moveTo(lx, 0);
+      ctx.lineTo(lx * 0.85 + cx * 0.15, H);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(W - lx, 0);
+      ctx.lineTo((W - lx) * 0.85 + cx * 0.15, H);
+      ctx.stroke();
     }
 
-    // vertical accent banner (soft, faded)
-    const bannerSpacing = 320;
-    const boff = ((-this.worldY * 18) % bannerSpacing + bannerSpacing) % bannerSpacing;
-    for (let y = -bannerSpacing + boff; y < H + bannerSpacing; y += bannerSpacing) {
-      const bg2 = ctx.createLinearGradient(0, y, 0, y + 70);
-      bg2.addColorStop(0, this.rgba(accent, 0.65));
-      bg2.addColorStop(1, this.rgba(accent, 0));
-      ctx.fillStyle = bg2;
-      ctx.fillRect(W / 2 - 5, y, 10, 70);
+    // Horizontal scanlines scrolling upward
+    const spacing = 90;
+    const offset = ((-this.worldY * 28) % spacing + spacing) % spacing;
+    for (let y = -spacing + offset; y < H + spacing; y += spacing) {
+      const dist = Math.abs(y - H * 0.55) / H;
+      const a = Math.max(0.05, 0.4 - dist * 0.4);
+      ctx.strokeStyle = this.rgba(accent, a * 0.35);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
     }
+
+    // Distant neon glyphs (subtle floating markers)
+    const glyphSpacing = 220;
+    const goff = ((-this.worldY * 22) % glyphSpacing + glyphSpacing) % glyphSpacing;
+    for (let y = -glyphSpacing + goff; y < H + glyphSpacing; y += glyphSpacing) {
+      ctx.fillStyle = this.rgba(lantern, 0.22);
+      ctx.fillRect(24, y, 3, 24);
+      ctx.fillRect(W - 27, y + 40, 3, 24);
+    }
+
+    // central vertical rail glow (behind rope)
+    const rail = ctx.createLinearGradient(W / 2 - 20, 0, W / 2 + 20, 0);
+    rail.addColorStop(0, "rgba(0,0,0,0)");
+    rail.addColorStop(0.5, this.rgba(accent, 0.08));
+    rail.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rail;
+    ctx.fillRect(W / 2 - 20, 0, 40, H);
   }
 
 

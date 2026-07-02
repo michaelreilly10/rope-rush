@@ -47,31 +47,40 @@ export function GameOver({
         </div>
       ) : (
         <>
-          <div className="text-xs uppercase tracking-[0.4em] text-white/60">Game Over</div>
-          <h2 className="mt-2 font-display text-5xl text-white">{hud.score}m</h2>
-          <div className="mt-2 text-sm text-white/60">
-            Best {hud.best}m {hud.score >= hud.best && hud.score > 0 && "· NEW BEST!"}
+          <div className="text-[10px] uppercase tracking-[0.5em] text-[#ff2e63]">System Down</div>
+          <h2
+            className="mt-3 font-display text-6xl text-white"
+            style={{
+              textShadow:
+                "0 0 12px rgba(0,217,255,0.9), 0 0 32px rgba(255,46,99,0.5)",
+            }}
+          >
+            {hud.score}<span className="text-2xl text-cyan-200/70">m</span>
+          </h2>
+          <div className="mt-2 text-xs uppercase tracking-widest text-white/50">
+            Best {hud.best}m {hud.score >= hud.best && hud.score > 0 && "· NEW RECORD"}
           </div>
-          
 
-          <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
+          <div className="mt-10 flex w-full max-w-xs flex-col gap-3">
             {hud.canContinue && (
               <button
                 onClick={playAd}
-                className="rounded-2xl bg-emerald-500 px-6 py-4 font-display text-xl text-white shadow-[0_6px_0_0_#065f46] active:translate-y-[2px] active:shadow-[0_4px_0_0_#065f46]"
+                className="rounded-xl border border-emerald-300/40 bg-emerald-500/20 px-6 py-4 font-display text-xl text-emerald-200 backdrop-blur-md active:scale-[0.98]"
+                style={{ textShadow: "0 0 10px rgba(52,211,153,0.9)" }}
               >
-                ▶ Continue (Watch Ad)
+                ▶ Continue
               </button>
             )}
             <button
               onClick={onRetry}
-              className="rounded-2xl bg-rose-500 px-6 py-4 font-display text-xl text-white shadow-[0_6px_0_0_#9f1239] active:translate-y-[2px] active:shadow-[0_4px_0_0_#9f1239]"
+              className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-6 py-4 font-display text-xl text-cyan-100 backdrop-blur-md active:scale-[0.98]"
+              style={{ textShadow: "0 0 10px rgba(0,217,255,0.9)" }}
             >
               Retry
             </button>
             <button
               onClick={onHome}
-              className="rounded-xl bg-white/10 px-4 py-3 font-display text-lg text-white"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-display text-lg text-white/80 backdrop-blur-md"
             >
               Home
             </button>
