@@ -487,7 +487,7 @@ export class Game {
     this.speed = Math.max(BASE_SPEED, MAX_SPEED * resetPct(this.worldY));
     // hit burst
     for (let i = 0; i < 14; i++) this.emitHit();
-    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.([20, 30, 20]);
+    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.([40, 40, 60, 40, 80]);
     if (this.lives <= 0) this.endRun();
   }
 
