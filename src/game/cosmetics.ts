@@ -25,7 +25,7 @@ export interface TrailSkin {
 }
 
 export const CHARACTERS: CharSkin[] = [
-  { id: "classic", name: "Classic Ninja", price: 0, body: "#1a1a24", sash: "#e64545", trim: "#f5f0e1" },
+  { id: "classic", name: "Cyber Ninja", price: 0, body: "#0f1230", sash: "#ff2e63", trim: "#00d9ff" },
   { id: "samurai", name: "Samurai", price: 250, body: "#2a2236", sash: "#d4a64a", trim: "#e8d9a8" },
   { id: "shadow", name: "Shadow Assassin", price: 600, body: "#0b0b12", sash: "#6b3df0", trim: "#9a8ec9" },
   { id: "robot", name: "Robot Ninja", price: 1200, body: "#3a4350", sash: "#39d6c4", trim: "#c9d2dc" },
