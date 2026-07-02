@@ -54,7 +54,7 @@ export function RopeRush() {
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/30 via-black/50 to-black/80">
               <div className="text-[10px] uppercase tracking-[0.5em] text-cyan-300/80">One-Tap Descent</div>
               <h1
-                className="mt-3 font-display text-7xl leading-none text-white"
+                className="mt-3 font-display text-5xl leading-none text-white"
                 style={{
                   textShadow:
                     "0 0 12px rgba(0,217,255,0.9), 0 0 32px rgba(0,217,255,0.55), 0 0 60px rgba(255,46,99,0.35)",
