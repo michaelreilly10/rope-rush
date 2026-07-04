@@ -590,6 +590,23 @@ export class Game {
     p.color = "#ff5a4a";
     p.size = 4;
   }
+  private spawnArrowFlame(side: Side, phase: number) {
+    const p = this.getParticle();
+    if (!p) return;
+    const flyP = Math.max(0, Math.min(1, (phase - ARROW_WARN) / ARROW_FLY));
+    const sy = (this.H + 20) + (-this.H - 40) * flyP;
+    p.active = true;
+    p.kind = "spark";
+    p.x = this.W / 2 + side * 28 + (Math.random() - 0.5) * 6;
+    p.y = sy + 14 + Math.random() * 8;
+    p.vx = (Math.random() - 0.5) * 20;
+    p.vy = 40 + Math.random() * 40;
+    p.life = 0.35;
+    p.max = 0.35;
+    p.color = Math.random() < 0.5 ? "#ffb347" : "#ff5a1f";
+    p.size = 3 + Math.random() * 2;
+  }
+
   // ---------- render ----------
 
   private lerpColor(a: string, b: string, t: number): string {
