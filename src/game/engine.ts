@@ -854,9 +854,14 @@ export class Game {
 
 
   private renderObstacles() {
-    const { ctx, W } = this;
+    const { ctx, W, H } = this;
     for (const o of this.obstacles) {
       if (!o.active) continue;
+      // arrows use their own screen positioning + warning glyph
+      if (o.kind === "arrow") {
+        this.renderArrow(o);
+        continue;
+      }
       const sy = this.worldToScreenY(o.y);
       if (sy < -40 || sy > this.H + 40) continue;
       const renderSide = (side: Side) => {
@@ -914,6 +919,105 @@ export class Game {
       if (o.side === 0) { renderSide(-1); renderSide(1); }
       else renderSide(o.side as Side);
     }
+  }
+
+  private renderArrow(o: Obstacle) {
+    const { ctx, W, H } = this;
+    const side = (o.side || 1) as Side;
+    const x = W / 2 + side * 28;
+    if (o.phase < ARROW_WARN) {
+      // pulsing warning glyph at bottom
+      const t = o.phase / ARROW_WARN;
+      const pulse = 0.55 + 0.45 * Math.abs(Math.sin(o.phase * 18));
+      const wy = H - 46;
+      ctx.save();
+      ctx.translate(x, wy);
+      // warning triangle
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = `rgba(255,120,40,${pulse})`;
+      ctx.fillStyle = `rgba(255,180,60,${0.85 * pulse})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.lineTo(13, 10);
+      ctx.lineTo(-13, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // exclamation mark
+      ctx.fillStyle = "#1a0a00";
+      ctx.fillRect(-1.5, -8, 3, 10);
+      ctx.fillRect(-1.5, 5, 3, 3);
+      // upward chevrons hinting incoming vertical arrow
+      ctx.strokeStyle = `rgba(255,140,60,${0.7 * pulse})`;
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const cy = 22 + i * 8 - t * 10;
+        ctx.beginPath();
+        ctx.moveTo(-8, cy + 4);
+        ctx.lineTo(0, cy - 2);
+        ctx.lineTo(8, cy + 4);
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
+    // flying arrow
+    const flyP = (o.phase - ARROW_WARN) / ARROW_FLY;
+    const sy = (H + 20) + (-H - 40) * flyP;
+    ctx.save();
+    ctx.translate(x, sy);
+    // flame trail behind (below) the arrow
+    const trailG = ctx.createLinearGradient(0, 0, 0, 40);
+    trailG.addColorStop(0, "rgba(255,200,80,0.9)");
+    trailG.addColorStop(0.5, "rgba(255,90,20,0.6)");
+    trailG.addColorStop(1, "rgba(255,40,0,0)");
+    ctx.fillStyle = trailG;
+    ctx.beginPath();
+    ctx.moveTo(-6, 4);
+    ctx.quadraticCurveTo(0, 20, 6, 4);
+    ctx.lineTo(4, 36);
+    ctx.quadraticCurveTo(0, 44, -4, 36);
+    ctx.closePath();
+    ctx.fill();
+    // shaft
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = "rgba(255,140,40,0.9)";
+    ctx.fillStyle = "#3a2416";
+    this.roundedRect(-1.6, -10, 3.2, 22, 1);
+    ctx.fill();
+    // arrowhead
+    ctx.fillStyle = "#e8e2d0";
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.lineTo(7, -6);
+    ctx.lineTo(-7, -6);
+    ctx.closePath();
+    ctx.fill();
+    // fletching
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ff5a1f";
+    ctx.beginPath();
+    ctx.moveTo(-1.6, 10);
+    ctx.lineTo(-6, 16);
+    ctx.lineTo(-1.6, 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(1.6, 10);
+    ctx.lineTo(6, 16);
+    ctx.lineTo(1.6, 14);
+    ctx.closePath();
+    ctx.fill();
+    // flame licking the head
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "rgba(255,180,40,0.9)";
+    ctx.fillStyle = "rgba(255,210,110,0.85)";
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.quadraticCurveTo(5, -16, 0, -10);
+    ctx.quadraticCurveTo(-5, -16, 0, -22);
+    ctx.fill();
+    ctx.restore();
   }
 
   private renderCoins() {
