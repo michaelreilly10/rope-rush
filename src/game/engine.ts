@@ -77,9 +77,9 @@ function bandKinds(score: number): ObstacleKind[] {
 function bandSpawnGap(score: number, speed: number): number {
   // Vertical meters between obstacles. Tighter as score grows, but always
   // scaled so the player has time to react at any speed.
-  const reactionWindow = 0.85; // seconds player gets at minimum
+  const reactionWindow = 0.9; // seconds player gets at minimum
   const minBySpeed = speed * reactionWindow;
-  const base = score < 300 ? 9 : score < 800 ? 7.5 : score < 1500 ? 6.5 : score < 2500 ? 5.5 : 5;
+  const base = score < 300 ? 8 : score < 800 ? 6.5 : score < 1500 ? 5.5 : score < 2500 ? 5 : 4.5;
   return Math.max(minBySpeed, base);
 }
 
