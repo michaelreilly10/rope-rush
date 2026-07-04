@@ -63,10 +63,15 @@ function resetPct(score: number) {
   return 0.6;
 }
 
+const ARROW_WARN = 0.75; // seconds warning shows at bottom
+const ARROW_FLY = 0.32; // seconds arrow takes to rise across screen
+const ARROW_TOTAL = ARROW_WARN + ARROW_FLY;
+
 function bandKinds(score: number): ObstacleKind[] {
   if (score < 300) return ["spike"];
-  if (score < 800) return ["spike", "blade"];
-  return ["spike", "blade"];
+  if (score < 600) return ["spike", "blade"];
+  if (score < 1200) return ["spike", "blade", "arrow"];
+  return ["spike", "spike", "blade", "blade", "arrow"];
 }
 
 function bandSpawnGap(score: number, speed: number): number {
