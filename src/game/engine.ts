@@ -66,9 +66,7 @@ function resetPct(score: number) {
 function bandKinds(score: number): ObstacleKind[] {
   if (score < 300) return ["spike"];
   if (score < 800) return ["spike", "blade"];
-  if (score < 1500) return ["spike", "blade", "fire"];
-  if (score < 2500) return ["spike", "blade", "fire", "arrow"];
-  return ["spike", "blade", "fire", "arrow"];
+  return ["spike", "blade"];
 }
 
 function bandSpawnGap(score: number, speed: number): number {
@@ -423,7 +421,7 @@ export class Game {
     const now = performance.now() / 1000;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      o.phase += dt * (o.kind === "blade" ? 6 : o.kind === "fire" ? 3 : 2);
+      o.phase += dt * (o.kind === "blade" ? 6 : 2);
       // off screen below (above on screen since environment scrolls up)
       if (o.y < ninjaY - 20) {
         if (!o.hit && !o.passed) {

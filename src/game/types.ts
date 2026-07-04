@@ -1,6 +1,6 @@
 export type Side = -1 | 1; // left | right
 
-export type ObstacleKind = "spike" | "blade" | "fire" | "arrow";
+export type ObstacleKind = "spike" | "blade";
 
 export interface Obstacle {
   active: boolean;
