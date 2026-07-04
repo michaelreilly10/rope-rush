@@ -861,38 +861,6 @@ export class Game {
             ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
             break;
           }
-          case "fire": {
-            const flick = 0.75 + Math.sin(o.phase * 3) * 0.2;
-            const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
-            g.addColorStop(0, `rgba(255,240,180,${flick})`);
-            g.addColorStop(0.35, `rgba(255,150,60,${flick * 0.9})`);
-            g.addColorStop(0.7, `rgba(255,80,30,${flick * 0.5})`);
-            g.addColorStop(1, "rgba(0,0,0,0)");
-            ctx.fillStyle = g;
-            ctx.fillRect(-30, -30, 60, 60);
-            ctx.fillStyle = "#2a1810";
-            this.roundedRect(-12, 10, 24, 5, 2);
-            ctx.fill();
-            break;
-          }
-          case "arrow": {
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = "rgba(255,180,80,0.6)";
-            ctx.fillStyle = "#8a6b40";
-            this.roundedRect(side * -16, -2, 32, 4, 1.5);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "#f0e0a8";
-            ctx.beginPath();
-            ctx.moveTo(side * 16, -6);
-            ctx.lineTo(side * 24, 0);
-            ctx.lineTo(side * 16, 6);
-            ctx.closePath();
-            ctx.fill();
-            ctx.fillStyle = "#3a2418";
-            ctx.fillRect(side * -18, -4, 3, 8);
-            break;
-          }
         }
         ctx.restore();
       };
