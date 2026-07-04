@@ -426,6 +426,31 @@ export class Game {
     const now = performance.now() / 1000;
     for (const o of this.obstacles) {
       if (!o.active) continue;
+      if (o.kind === "arrow") {
+        const prev = o.phase;
+        o.phase += dt;
+        // spawn small flame trail while flying
+        if (o.phase > ARROW_WARN && o.phase < ARROW_TOTAL && Math.random() < 0.9) {
+          this.spawnArrowFlame(o.side as Side, o.phase);
+        }
+        // detect crossing of ninja Y (H*0.55). Screen y goes from H+20 -> -20 over ARROW_FLY.
+        const hitP = (this.H + 20 - this.H * 0.55) / (this.H + 40);
+        const flyPrev = (prev - ARROW_WARN) / ARROW_FLY;
+        const flyNow = (o.phase - ARROW_WARN) / ARROW_FLY;
+        if (!o.hit && now > this.invulnUntil && flyPrev < hitP && flyNow >= hitP) {
+          const onSide = o.side === this.ninjaSide;
+          if (onSide) { o.hit = true; this.takeHit(); }
+        }
+        if (o.phase >= ARROW_TOTAL) {
+          if (!o.hit && !o.passed) {
+            o.passed = true;
+            this.combo++;
+            if (this.combo % 5 === 0) audio.sfx("combo");
+          }
+          o.active = false;
+        }
+        continue;
+      }
       o.phase += dt * (o.kind === "blade" ? 6 : 2);
       // off screen below (above on screen since environment scrolls up)
       if (o.y < ninjaY - 20) {
