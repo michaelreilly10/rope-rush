@@ -78,12 +78,6 @@ export function GameOver({
             >
               Retry
             </button>
-            <button
-              onClick={onHome}
-              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-display text-lg text-white/80 backdrop-blur-md"
-            >
-              Home
-            </button>
           </div>
         </>
       )}
