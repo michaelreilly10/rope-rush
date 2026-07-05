@@ -11,6 +11,9 @@ export function RopeRush() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<Game | null>(null);
   const [hud, setHud] = useState<HUDState | null>(null);
+  const [lbOpen, setLbOpen] = useState(false);
+  const [lbHighlight, setLbHighlight] = useState<string | null>(null);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
