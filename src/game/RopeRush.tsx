@@ -83,7 +83,13 @@ export function RopeRush() {
               </div>
             </div>
           )}
-          {hud.phase === "playing" && <HUD hud={hud} onPause={() => game.pause()} />}
+          {hud.phase === "playing" && (
+            <HUD
+              hud={hud}
+              onPause={() => game.pause()}
+              onLeaderboard={() => { game.pause(); setLbHighlight(null); setLbOpen(true); }}
+            />
+          )}
           {hud.phase === "paused" && (
             <PauseOverlay
               onResume={() => game.resumePlay()}
@@ -95,11 +101,17 @@ export function RopeRush() {
               hud={hud}
               onContinue={() => game.continueWithAd()}
               onRetry={() => game.startRun()}
-              onHome={() => game.startRun()}
+              onLeaderboard={(id) => { setLbHighlight(id ?? null); setLbOpen(true); }}
             />
           )}
+          <Leaderboard
+            open={lbOpen}
+            onClose={() => setLbOpen(false)}
+            highlightId={lbHighlight}
+          />
         </>
       )}
+
     </div>
   );
 }
