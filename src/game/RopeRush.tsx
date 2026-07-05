@@ -4,11 +4,16 @@ import type { HUDState } from "./types";
 import { HUD } from "./ui/HUD";
 import { GameOver } from "./ui/GameOver";
 import { PauseOverlay } from "./ui/PauseOverlay";
+import { Leaderboard } from "./ui/Leaderboard";
+
 
 export function RopeRush() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gameRef = useRef<Game | null>(null);
   const [hud, setHud] = useState<HUDState | null>(null);
+  const [lbOpen, setLbOpen] = useState(false);
+  const [lbHighlight, setLbHighlight] = useState<string | null>(null);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -78,7 +83,13 @@ export function RopeRush() {
               </div>
             </div>
           )}
-          {hud.phase === "playing" && <HUD hud={hud} onPause={() => game.pause()} />}
+          {hud.phase === "playing" && (
+            <HUD
+              hud={hud}
+              onPause={() => game.pause()}
+              onLeaderboard={() => { game.pause(); setLbHighlight(null); setLbOpen(true); }}
+            />
+          )}
           {hud.phase === "paused" && (
             <PauseOverlay
               onResume={() => game.resumePlay()}
@@ -90,11 +101,17 @@ export function RopeRush() {
               hud={hud}
               onContinue={() => game.continueWithAd()}
               onRetry={() => game.startRun()}
-              onHome={() => game.startRun()}
+              onLeaderboard={(id) => { setLbHighlight(id ?? null); setLbOpen(true); }}
             />
           )}
+          <Leaderboard
+            open={lbOpen}
+            onClose={() => setLbOpen(false)}
+            highlightId={lbHighlight}
+          />
         </>
       )}
+
     </div>
   );
 }

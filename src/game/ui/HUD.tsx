@@ -10,7 +10,15 @@ const heart = (filled: boolean, key: number) => (
   </span>
 );
 
-export function HUD({ hud, onPause }: { hud: HUDState; onPause: () => void }) {
+export function HUD({
+  hud,
+  onPause,
+  onLeaderboard,
+}: {
+  hud: HUDState;
+  onPause: () => void;
+  onLeaderboard: () => void;
+}) {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col">
       <div className="pointer-events-auto flex items-start justify-between px-4 pt-4">
@@ -26,17 +34,36 @@ export function HUD({ hud, onPause }: { hud: HUDState; onPause: () => void }) {
           <div className="text-[9px] uppercase tracking-widest text-white/40">Best {hud.best}m</div>
         </div>
 
-        <button
-          onClick={onPause}
-          aria-label="Pause"
-          className="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/20 bg-black/50 text-white backdrop-blur-md active:scale-95"
-        >
-          <span className="flex gap-1">
-            <span className="block h-4 w-1 bg-cyan-300" />
-            <span className="block h-4 w-1 bg-cyan-300" />
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onLeaderboard}
+            aria-label="Leaderboard"
+            className="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/20 bg-black/50 text-cyan-200 backdrop-blur-md active:scale-95"
+            style={{ textShadow: "0 0 8px rgba(0,217,255,0.9)" }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 4h10v3a5 5 0 0 1-10 0V4z" />
+              <path d="M4 5h3v2a3 3 0 0 1-3-3z" />
+              <path d="M20 5h-3v2a3 3 0 0 0 3-3z" />
+              <path d="M9 14h6v2H9z" />
+              <path d="M8 20h8" />
+              <path d="M12 16v4" />
+            </svg>
+          </button>
+          <button
+            onClick={onPause}
+            aria-label="Pause"
+            className="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/20 bg-black/50 text-white backdrop-blur-md active:scale-95"
+          >
+            <span className="flex gap-1">
+              <span className="block h-4 w-1 bg-cyan-300" />
+              <span className="block h-4 w-1 bg-cyan-300" />
+            </span>
+          </button>
+        </div>
       </div>
+
+
 
       <div className="pointer-events-none flex items-center justify-center pt-3">
         <div className="flex gap-1.5 rounded-full border border-white/10 bg-black/50 px-3 py-1 text-lg backdrop-blur-md">
