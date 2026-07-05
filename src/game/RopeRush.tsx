@@ -4,6 +4,8 @@ import type { HUDState } from "./types";
 import { HUD } from "./ui/HUD";
 import { GameOver } from "./ui/GameOver";
 import { PauseOverlay } from "./ui/PauseOverlay";
+import { Leaderboard } from "./ui/Leaderboard";
+
 
 export function RopeRush() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
