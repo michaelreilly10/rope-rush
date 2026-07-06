@@ -725,6 +725,42 @@ export class Game {
     ctx.restore();
   }
 
+  private initClouds() {
+    const cloudSpacing = 220;
+    const cloudMargin = 120;
+    const H = this.H;
+    const count = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
+    this.clouds = [];
+    for (let i = 0; i < count; i++) {
+      this.clouds.push({
+        y: H + cloudMargin - i * cloudSpacing,
+        x: 40 + Math.random() * (this.W - 80),
+        s: 0.85 + Math.random() * 0.6,
+      });
+    }
+  }
+
+  private updateClouds(dt: number) {
+    const cloudMargin = 120;
+    const cloudSpacing = 220;
+    const H = this.H;
+    const drift = this.speed * 6;
+
+    for (const c of this.clouds) {
+      c.y -= drift * dt;
+    }
+
+    let maxY = this.clouds.length > 0 ? Math.max(...this.clouds.map((c) => c.y)) : H + cloudMargin;
+    for (const c of this.clouds) {
+      if (c.y < -cloudMargin) {
+        c.y = maxY + cloudSpacing;
+        maxY = c.y;
+        c.x = 40 + Math.random() * (this.W - 80);
+        c.s = 0.85 + Math.random() * 0.6;
+      }
+    }
+  }
+
   private renderBackground() {
     const { ctx, W, H } = this;
     const lantern = this.themeMix("lantern");
