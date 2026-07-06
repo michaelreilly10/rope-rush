@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { HUDState } from "../types";
-import { submitScore } from "@/lib/leaderboard.functions";
+import { submitScore, deleteScoreForContinue } from "@/lib/leaderboard.functions";
+
 
 const NAME_KEY = "rr.playerName";
 const MY_SCORES_KEY = "rr.myScores";
