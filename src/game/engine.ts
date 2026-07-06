@@ -665,18 +665,10 @@ export class Game {
     ctx.save();
     ctx.translate(ox, oy);
 
-    // flat cartoon sky (two horizontal bands, no gradient)
+    // flat cartoon sky — single full-height band
     ctx.fillStyle = this.themeMix("bg");
-    ctx.fillRect(0, 0, W, H * 0.55);
-    ctx.fillStyle = this.themeMix("bgFar");
-    ctx.fillRect(0, H * 0.55, W, H * 0.45);
-    // horizon line
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.55);
-    ctx.lineTo(W, H * 0.55);
-    ctx.stroke();
+    ctx.fillRect(0, 0, W, H);
+
 
     this.renderBackground();
 
