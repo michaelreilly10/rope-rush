@@ -7,11 +7,13 @@ const NAME_KEY = "rr.playerName";
 
 export function GameOver({
   hud,
+  sessionToken,
   onContinue,
   onRetry,
   onLeaderboard,
 }: {
   hud: HUDState;
+  sessionToken: string | null;
   onContinue: () => void;
   onRetry: () => void;
   onLeaderboard: (highlightId?: string) => void;
