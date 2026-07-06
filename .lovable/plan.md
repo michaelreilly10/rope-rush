@@ -1,108 +1,76 @@
-# Rope Rush — Build Plan
+## Goal
 
-A polished portrait mobile web game built as a single-page TanStack Start route. Pure client-side, no backend needed for v1 (coins/best score/unlocks persisted to `localStorage`). Ads are stubbed with a clean interface so a real ad SDK can drop in later.
+Repaint the game to look like a 90s Saturday-morning cartoon: thick black outlines, bright saturated flat fills, halftone/comic shading, no neon glows or gradients. All rendering changes stay in the canvas draw code — no gameplay changes.
 
-## Scope for v1
+## Visual language
 
-In:
-- Core loop: tap to switch sides, scrolling fortress, speed ramp + partial reset on hit, 3 lives, distance score, coins, combos with the 4 milestone rewards.
-- Obstacle types: spikes, rotating blades, fire traps, crossbow arrows (the four needed to cover all difficulty bands). Swinging axes, broken rope, falling rocks, explosive barrels stubbed in the obstacle registry as TODO variants so they're trivial to add.
-- Difficulty bands exactly as specified (0–300 spikes only, etc.).
-- Environment themes: Castle, Temple, Bamboo Forest (3 of the listed 7 fully styled; the rest registered as theme presets so adding them is a config change).
-- Cosmetics: full shop UI + unlock/equip for characters, rope skins, trails. Visuals shipped for ~3 of each; rest defined as locked entries with price + unlock flow.
-- Audio: Web Audio sfx + adaptive music intensity (single track with low-pass filter that opens as speed rises; calms briefly after a hit).
-- UI: HUD, pause, game over with Continue (rewarded-ad stub, once per run) / Retry / Home, main menu, shop.
-- Polish: screen shake, particles (smoke on swap, sparkle on coin, hit burst), motion blur at high speed, 60fps target via `requestAnimationFrame` + object pooling.
+- **Outlines**: every drawn shape gets a solid black stroke, 2–3 px, on top of a flat fill. Use `lineJoin: "round"` for chunky feel.
+- **Fills**: flat, saturated cartoon colors. No radial gradients, no glow/shadowBlur.
+- **Shading**: one lighter "highlight" wedge and one darker "shadow" wedge per major shape (cel-shading), plus tiny halftone dot clusters on large shapes (ninja body, big obstacles) for the comic-print texture.
+- **Motion accents**: comic speed lines behind the ninja at high speed instead of the current motion blur alpha trail.
 
-Out (call out explicitly so the user can confirm):
-- Real ad network integration — stubbed behind `AdService` interface.
-- Native iOS packaging — this is a mobile-web PWA; can be wrapped in Capacitor later.
-- Online leaderboards / accounts.
+## Palette (bright cartoon, replaces neon)
 
-## User flow
+Redefine the 3 `THEMES` in `src/game/engine.ts`:
 
-```text
-Main Menu  ──►  Game  ──►  Game Over  ──►  (Continue ad | Retry | Home)
-   │                                              │
-   ├──► Shop (characters / ropes / trails)        │
-   └──► Settings (sfx, music, haptics)  ◄─────────┘
-```
+- **Sunny Rooftops**: sky `#8ec7ff`, far `#5aa8ff`, near `#f6c744`, beam `#c76b2a`, accent `#ff5d5d`, lantern `#ffd23f`
+- **Jungle Cartoon**: sky `#b7e86a`, far `#5aa84a`, near `#2f6b2a`, beam `#7a4a1a`, accent `#ff8a3d`, lantern `#ffe14a`
+- **Comic Sunset**: sky `#ffd06a`, far `#ff8a3d`, near `#c74a6b`, beam `#5a2a5a`, accent `#3ac0ff`, lantern `#fff2a8`
 
-## Architecture
+Background draw: solid sky band + big flat cloud shapes (rounded blobs with black outlines) parallax-scrolling, plus a distant flat silhouette skyline. Remove the current gradient/star field.
 
-Single route `src/routes/index.tsx` renders `<RopeRush />`. All game code lives under `src/game/`.
+## Ninja restyle (canvas)
 
-```text
-src/game/
-  RopeRush.tsx              # mounts canvas + React HUD overlay, owns GameLoop
-  engine/
-    GameLoop.ts             # rAF loop, fixed-timestep update + render
-    Camera.ts               # vertical scroll, shake
-    Input.ts                # pointerdown → swap side
-    Pool.ts                 # generic object pool
-    Rng.ts                  # seeded RNG for fair runs
-    Audio.ts                # Web Audio: sfx bank + music intensity
-    Storage.ts              # localStorage wrapper (best, coins, unlocks, settings)
-    AdService.ts            # interface + stub impl (resolve after fake delay)
-  state/
-    GameState.ts            # run state machine: menu | playing | hit | gameover | paused
-    Progression.ts          # speed curve, partial-reset table, combo milestones
-    Difficulty.ts           # band → allowed obstacle types + spawn weights
-  entities/
-    Ninja.ts                # side (L/R), anim state, invuln timer
-    Rope.ts                 # rope render + skin
-    Obstacle.ts             # base + Spike, Blade, Fire, Arrow (registry)
-    Coin.ts
-    Particle.ts             # smoke, sparkle, hit burst
-  world/
-    Spawner.ts              # pattern generator per difficulty band
-    Theme.ts                # palette + decor (lanterns, beams, petals) per area
-    Decor.ts                # background parallax layers
-  cosmetics/
-    catalog.ts              # characters, ropes, trails (id, price, render hooks)
-  ui/
-    HUD.tsx                 # score, coins, hearts, pause btn, combo meter
-    MainMenu.tsx
-    Shop.tsx                # tabs: Characters | Ropes | Trails
-    GameOver.tsx
-    PauseOverlay.tsx
-    Settings.tsx
-  hooks/
-    useGame.ts              # React ↔ engine bridge (subscribe to state)
-```
+- Body: round-cornered rectangle torso + round head, both filled with `char.body`, stroked black 2.5px.
+- Face: white eye-patch strip with two big pupils; mouth a small curved line. Big cartoon eyes are what sells "90s cartoon".
+- Sash: `char.sash` flat band with black outline, small trailing tail that wobbles with a sine.
+- Trim/headband color = `char.trim`, plain flat.
+- Remove any glow / shadowBlur currently used on the ninja.
+- Add halftone dots (2 px, low-alpha black) inside the torso for print texture.
 
-Rendering: HTML5 Canvas 2D for the game world (cheap, hits 60fps on iOS Safari, easy particles and motion blur via alpha-fill trails). React renders only the HUD/menus on top — keeps UI ergonomic without re-rendering the game.
+## Rope restyle (canvas)
 
-## Key systems
+- Draw as a thick flat colored stroke (`rope.color`, 8 px) with a black outline stroke (11 px) underneath — instant "inked" look.
+- Chain style: alternating black-outlined pill links. Vine: same base + small leaf triangles every N pixels. Neon: stays bright fill but with black outline (no blur).
+- Remove `shadowBlur` glow on all rope styles.
 
-- **Speed**: `speed = clamp(base + t * accel, base, max)`. On hit: `speed = max * resetPct(score)` using the spec's table.
-- **Spawner**: emits obstacle "patterns" (hand-authored templates) chosen by current difficulty band, scaled by speed. Templates encode side(s), spacing, and required gap so runs stay fair.
-- **Combo**: increments on each obstacle passed without hit; thresholds 10/25/50/100 trigger coin x2, slow-mo (0.6x for 3s), shield (absorbs next hit), golden rope (visual only). Reset on hit.
-- **Pooling**: `Pool<Obstacle>`, `Pool<Coin>`, `Pool<Particle>` — no GC churn during runs.
-- **Themes**: every 500–1000m, crossfade `Theme` palette + decor set. Gameplay unaffected.
-- **Audio**: one base music loop; speed maps to a low-pass cutoff and gain on a percussion layer. Hit triggers a 1.2s duck.
-- **Persistence**: `{ bestScore, coins, unlocked: {chars,ropes,trails}, equipped: {...}, settings }` in `localStorage` under a versioned key.
-- **Ads**: `AdService.showRewarded(): Promise<'completed'|'dismissed'>`. Stub resolves `'completed'` after 1.5s with a fake overlay so the Continue flow is fully playable.
+## Obstacles restyle
 
-## Visuals
+Same recipe — flat fill + thick black outline + one cel highlight:
+- **Spike**: bright red-orange triangle, black outline, white highlight sliver on left edge.
+- **Blade**: yellow disc with black gear teeth outline, dark center hub, spinning as today.
+- **Arrow**: cartoon arrow with feather fletching, black outline.
+- **Fire**: layered orange/yellow flame blobs with outlines instead of additive glow.
+- **Coin**: flat gold disc, black outline, small "$"-style shine mark.
 
-Distinct hand-drawn-feeling aesthetic — not generic neon. Dark indigo castle interior, warm lantern orange, ink-brush silhouettes for beams/banners, soft falling sakura petals. Ninja is a chunky silhouette with a colored sash (sash color = equipped skin accent). Rope is a thick braided stroke; skins swap stroke style + glow.
+## Motion & effects
 
-Design tokens (palette, fonts) added to `src/styles.css` so HUD/menus stay consistent with the canvas art. Display font: a brush/serif display face (e.g. Shippori Mincho) paired with a clean sans for HUD numerals.
+- Replace the trailing-alpha motion blur with **speed lines**: 4–6 short black lines drawn behind the ninja whose count/length scale with `speed / MAX_SPEED`.
+- Particles (smoke, sparkle, hit burst): keep positions, but render as outlined puffs (small black-stroked circles) instead of soft blurred dots. Hit burst becomes a comic "POW"-style starburst polygon.
+- Remove all `ctx.shadowBlur` usage across draw calls.
 
-## Build order
+## HUD / menu tone alignment
 
-1. Scaffold `RopeRush` route + canvas mount + GameLoop + Input + Camera scroll.
-2. Ninja + Rope + side-switch with spin/smoke; HUD with score/hearts/coins.
-3. Spawner + Spike obstacles + collision + lives/invuln + partial-speed reset.
-4. Coins + combo system + milestone rewards.
-5. Remaining obstacle types gated by difficulty bands.
-6. Themes + parallax decor + area transitions.
-7. Audio (sfx + adaptive music).
-8. Main menu, pause, game over, rewarded-ad stub, settings.
-9. Shop + cosmetics catalog + equip/unlock + persistence.
-10. Polish pass: screen shake, particles, motion blur, haptics (`navigator.vibrate`), perf check.
+- Swap display font utility in `src/styles.css` `@utility font-display` from `Archivo Black` to a chunky cartoon face (`"Bangers", "Luckiest Guy", "Archivo Black", system-ui`) and install `@fontsource/bangers` + `@fontsource/luckiest-guy`, imported in `src/router.tsx` (or wherever fonts are loaded).
+- Body font: keep Hind (already cartoony-friendly) or switch to `Fredoka`. I'll keep Hind unless you say otherwise.
+- No component/layout changes to HUD, MainMenu, GameOver, Leaderboard — just the font swap flows through.
 
-## Open question
+## Files touched
 
-Should I proceed with the stubbed `AdService` (real ad SDK wired in later) and `localStorage` persistence (no account/cloud sync), or do you want Lovable Cloud enabled now for cross-device coin/unlock sync?
+- `src/game/engine.ts` — themes array, all draw functions (ninja, rope, obstacles, coins, particles, background, motion effect).
+- `src/styles.css` — `font-display` utility stack.
+- `src/router.tsx` (or `src/routes/__root.tsx`) — `@fontsource/bangers` import.
+- `package.json` via `bun add @fontsource/bangers` — new dep.
+
+## Out of scope
+
+- No changes to game logic, physics, spawner, difficulty, leaderboard, or UI structure.
+- No new obstacle types; existing ones are just repainted.
+- Cosmetic shop entries in `src/game/cosmetics.ts` keep their IDs and prices; only their rendering changes via the new draw code.
+
+## Technical notes
+
+- Canvas outlines: draw fill first, then `ctx.strokeStyle = "#0a0a0a"; ctx.lineWidth = 2.5; ctx.stroke()` — cheap and pixel-consistent.
+- Halftone: precompute a small offscreen pattern canvas once and reuse via `ctx.createPattern` to avoid per-frame cost.
+- Speed lines: short `moveTo/lineTo` segments seeded off the RNG, alpha 0.5, black — no additional pool needed.
+- All changes stay inside the existing draw functions; no new modules.

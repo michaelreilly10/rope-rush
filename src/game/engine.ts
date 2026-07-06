@@ -23,36 +23,38 @@ const BASE_SPEED = 6; // m/s
 const MAX_SPEED = 28;
 const SPEED_ACCEL = 0.18; // per second
 
+const INK = "#0d0a08";
+
 const THEMES: ThemePalette[] = [
   {
-    id: "grid",
-    name: "Neo Grid",
-    bg: "#05070f",
-    bgFar: "#0a0e27",
-    bgNear: "#1a1f4e",
-    beam: "#1e2a6b",
-    accent: "#00d9ff",
-    lantern: "#ff2e63",
+    id: "rooftops",
+    name: "Sunny Rooftops",
+    bg: "#8ec7ff",
+    bgFar: "#5aa8ff",
+    bgNear: "#f6c744",
+    beam: "#c76b2a",
+    accent: "#ff5d5d",
+    lantern: "#ffd23f",
   },
   {
-    id: "hive",
-    name: "Neon Hive",
-    bg: "#07030f",
-    bgFar: "#160a2e",
-    bgNear: "#2e1466",
-    beam: "#3a1a6b",
-    accent: "#ff2e63",
-    lantern: "#c74dff",
+    id: "jungle",
+    name: "Jungle Cartoon",
+    bg: "#b7e86a",
+    bgFar: "#5aa84a",
+    bgNear: "#2f6b2a",
+    beam: "#7a4a1a",
+    accent: "#ff8a3d",
+    lantern: "#ffe14a",
   },
   {
-    id: "circuit",
-    name: "Circuit Vault",
-    bg: "#020a0a",
-    bgFar: "#062a2e",
-    bgNear: "#0a4a52",
-    beam: "#0e6a70",
-    accent: "#3affbf",
-    lantern: "#00d9ff",
+    id: "sunset",
+    name: "Comic Sunset",
+    bg: "#ffd06a",
+    bgFar: "#ff8a3d",
+    bgNear: "#c74a6b",
+    beam: "#5a2a5a",
+    accent: "#3ac0ff",
+    lantern: "#fff2a8",
   },
 ];
 
@@ -663,55 +665,50 @@ export class Game {
     ctx.save();
     ctx.translate(ox, oy);
 
-    // bg gradient (deeper, richer)
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, this.themeMix("bg"));
-    bg.addColorStop(0.55, this.themeMix("bgFar"));
-    bg.addColorStop(1, this.themeMix("bgNear"));
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
+    // flat cartoon sky (two horizontal bands, no gradient)
+    ctx.fillStyle = this.themeMix("bg");
+    ctx.fillRect(0, 0, W, H * 0.55);
+    ctx.fillStyle = this.themeMix("bgFar");
+    ctx.fillRect(0, H * 0.55, W, H * 0.45);
+    // horizon line
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, H * 0.55);
+    ctx.lineTo(W, H * 0.55);
+    ctx.stroke();
 
     this.renderBackground();
 
-    // atmospheric fog band behind rope
-    const fog = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.75);
-    fog.addColorStop(0, "rgba(0,0,0,0)");
-    fog.addColorStop(0.5, this.rgba(this.themeMix("accent"), 0.06));
-    fog.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = fog;
-    ctx.fillRect(0, H * 0.35, W, H * 0.4);
-
     this.renderRope();
     this.renderObstacles();
+    this.renderCoins();
     this.renderParticles();
     this.renderNinja();
 
-    // speed lines at high speed (replaces flat gray veil)
+    // comic speed lines behind everything at high speed
     const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
-    if (this.phase === "playing" && speedPct > 0.35) {
-      const intensity = (speedPct - 0.35) / 0.65;
-      ctx.strokeStyle = `rgba(255,255,255,${intensity * 0.18})`;
-      ctx.lineWidth = 1;
+    if (this.phase === "playing" && speedPct > 0.3) {
+      const intensity = (speedPct - 0.3) / 0.7;
+      ctx.strokeStyle = INK;
+      ctx.globalAlpha = 0.35 + intensity * 0.35;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
       const seed = (this.worldY * 40) | 0;
-      const lineCount = 6 + Math.floor(intensity * 8);
+      const lineCount = 4 + Math.floor(intensity * 6);
       for (let i = 0; i < lineCount; i++) {
         const s = ((seed + i * 977) % 1000) / 1000;
-        const lx = s * W;
+        const side = i % 2 === 0 ? 0.08 + s * 0.18 : 0.74 + s * 0.18;
+        const lx = side * W;
         const ly = ((seed * 0.7 + i * 613) % H) * 1;
-        const len = 30 + intensity * 60;
+        const len = 24 + intensity * 46;
         ctx.beginPath();
         ctx.moveTo(lx, ly);
         ctx.lineTo(lx, ly + len);
         ctx.stroke();
       }
+      ctx.globalAlpha = 1;
     }
-
-    // vignette
-    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
-    vg.addColorStop(0, "rgba(0,0,0,0)");
-    vg.addColorStop(1, "rgba(0,0,0,0.55)");
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, W, H);
 
     // hit flash
     if (this.hitFlash > 0) {
@@ -732,115 +729,152 @@ export class Game {
 
   private renderBackground() {
     const { ctx, W, H } = this;
+    const bgNear = this.themeMix("bgNear");
     const beam = this.themeMix("beam");
-    const accent = this.themeMix("accent");
     const lantern = this.themeMix("lantern");
 
-    // Soft parallax side pillars (dark neon edge)
-    const leftG = ctx.createLinearGradient(0, 0, 60, 0);
-    leftG.addColorStop(0, "rgba(0,0,0,0.7)");
-    leftG.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = leftG;
-    ctx.fillRect(0, 0, 60, H);
-    const rightG = ctx.createLinearGradient(W - 60, 0, W, 0);
-    rightG.addColorStop(0, "rgba(0,0,0,0)");
-    rightG.addColorStop(1, "rgba(0,0,0,0.7)");
-    ctx.fillStyle = rightG;
-    ctx.fillRect(W - 60, 0, 60, H);
-
-    // Vertical cyber-grid columns (perspective towards center)
-    ctx.strokeStyle = this.rgba(beam, 0.55);
-    ctx.lineWidth = 1;
-    const cols = 6;
-    for (let i = 1; i <= cols; i++) {
-      const t = i / (cols + 1);
-      const lx = t * W;
-      const cx = W / 2;
-      // slight perspective converging toward vanishing point at horizon
+    // parallax clouds (upper sky) — big flat rounded blobs with black outlines
+    const cloudSpacing = 180;
+    const coff = ((-this.worldY * 6) % cloudSpacing + cloudSpacing) % cloudSpacing;
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 2.5;
+    for (let i = -1; i < 5; i++) {
+      const cy = -60 + i * cloudSpacing + coff;
+      if (cy > H * 0.55) continue;
+      const seedA = ((i * 733) % 1000) / 1000;
+      const cx = seedA * (W - 60) + 30;
+      const s = 0.85 + ((i * 311) % 100) / 250;
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = INK;
       ctx.beginPath();
-      ctx.moveTo(lx, 0);
-      ctx.lineTo(lx * 0.85 + cx * 0.15, H);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(W - lx, 0);
-      ctx.lineTo((W - lx) * 0.85 + cx * 0.15, H);
+      ctx.arc(cx, cy, 18 * s, 0, Math.PI * 2);
+      ctx.arc(cx + 20 * s, cy + 4, 14 * s, 0, Math.PI * 2);
+      ctx.arc(cx - 22 * s, cy + 6, 15 * s, 0, Math.PI * 2);
+      ctx.arc(cx + 4, cy - 8 * s, 12 * s, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
     }
 
-    // Horizontal scanlines scrolling upward
-    const spacing = 90;
-    const offset = ((-this.worldY * 28) % spacing + spacing) % spacing;
-    for (let y = -spacing + offset; y < H + spacing; y += spacing) {
-      const dist = Math.abs(y - H * 0.55) / H;
-      const a = Math.max(0.05, 0.4 - dist * 0.4);
-      ctx.strokeStyle = this.rgba(accent, a * 0.35);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
+    // distant flat skyline silhouette along the horizon
+    ctx.fillStyle = bgNear;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.5;
+    const skyH = H * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(0, skyH);
+    const step = 28;
+    const skyOff = ((this.worldY * 4) % step + step) % step;
+    let x = -skyOff;
+    let toggle = 0;
+    while (x < W + step) {
+      const h = 20 + (((x * 37) | 0) % 30);
+      ctx.lineTo(x, skyH - h);
+      ctx.lineTo(x + step * 0.5, skyH - h);
+      ctx.lineTo(x + step * 0.5, skyH - (h + (toggle % 2 === 0 ? 8 : -6)));
+      ctx.lineTo(x + step, skyH - (h + (toggle % 2 === 0 ? 8 : -6)));
+      x += step;
+      toggle++;
+    }
+    ctx.lineTo(W, skyH);
+    ctx.lineTo(W, H * 0.6);
+    ctx.lineTo(0, H * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // ground band beneath horizon: flat with dashed cartoon grass tufts
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    const gspacing = 44;
+    const goff = ((-this.worldY * 32) % gspacing + gspacing) % gspacing;
+    ctx.fillStyle = beam;
+    for (let y = H * 0.62; y < H; y += gspacing) {
+      const yy = y + goff;
+      // little tufts on both sides
+      for (let sx = 0; sx < 2; sx++) {
+        const tx = sx === 0 ? 20 : W - 20;
+        ctx.beginPath();
+        ctx.moveTo(tx - 6, yy + 4);
+        ctx.lineTo(tx, yy - 6);
+        ctx.lineTo(tx + 6, yy + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
     }
 
-    // Distant neon glyphs (subtle floating markers)
-    const glyphSpacing = 220;
-    const goff = ((-this.worldY * 22) % glyphSpacing + glyphSpacing) % glyphSpacing;
-    for (let y = -glyphSpacing + goff; y < H + glyphSpacing; y += glyphSpacing) {
-      ctx.fillStyle = this.rgba(lantern, 0.22);
-      ctx.fillRect(24, y, 3, 24);
-      ctx.fillRect(W - 27, y + 40, 3, 24);
-    }
-
-    // central vertical rail glow (behind rope)
-    const rail = ctx.createLinearGradient(W / 2 - 20, 0, W / 2 + 20, 0);
-    rail.addColorStop(0, "rgba(0,0,0,0)");
-    rail.addColorStop(0.5, this.rgba(accent, 0.08));
-    rail.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = rail;
-    ctx.fillRect(W / 2 - 20, 0, 40, H);
+    // small sun/moon disc top-right for extra cartoon warmth
+    ctx.fillStyle = lantern;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(W - 44, 60, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
 
 
   private renderRope() {
-    const { ctx, W, H } = this;
+    const { ctx, H } = this;
     const rope = findRope(this.save.equipped.rope);
-    const x = W / 2;
+    const x = this.W / 2;
     const color = rope.color;
 
-    // outer glow
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = rope.glow || this.rgba(this.themeMix("accent"), 0.6);
-
-    // main rope with vertical gradient (highlight in middle)
-    const rg = ctx.createLinearGradient(x - 5, 0, x + 5, 0);
-    rg.addColorStop(0, "rgba(0,0,0,0.55)");
-    rg.addColorStop(0.5, color);
-    rg.addColorStop(1, "rgba(0,0,0,0.55)");
-    ctx.strokeStyle = rg;
-    ctx.lineWidth = rope.style === "chain" ? 6 : 7;
+    // thick black outline stroke behind the rope
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 12;
     ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, H);
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
-    // subtle inner highlight line
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 1;
+    // flat colored rope stroke
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.moveTo(x - 1.5, 0);
-    ctx.lineTo(x - 1.5, H);
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
     ctx.stroke();
 
-    // braid hatching
-    if (rope.style === "rope" || rope.style === "vine") {
-      ctx.strokeStyle = "rgba(0,0,0,0.4)";
-      ctx.lineWidth = 1;
-      const off = ((-this.worldY * 50) % 10 + 10) % 10;
-      for (let y = -10 + off; y < H; y += 10) {
+    // style-specific inked details
+    const off = ((-this.worldY * 60) % 18 + 18) % 18;
+    if (rope.style === "chain") {
+      // stacked pill links, outlined
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      for (let y = -18 + off; y < H; y += 18) {
+        ctx.fillStyle = color;
+        this.roundedRect(x - 5, y, 10, 14, 5);
+        ctx.fill();
+        ctx.stroke();
+      }
+    } else if (rope.style === "vine") {
+      // little leaves alternating sides
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      let flip = 0;
+      for (let y = -14 + off; y < H; y += 22) {
+        const s = flip % 2 === 0 ? 1 : -1;
+        ctx.fillStyle = "#7bc450";
         ctx.beginPath();
-        ctx.moveTo(x - 3, y);
-        ctx.lineTo(x + 3, y + 5);
+        ctx.moveTo(x, y);
+        ctx.quadraticCurveTo(x + s * 14, y - 4, x + s * 16, y + 6);
+        ctx.quadraticCurveTo(x + s * 8, y + 8, x, y + 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        flip++;
+      }
+    } else {
+      // rope / neon: black tick marks for braid feel
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      for (let y = -10 + off; y < H; y += 12) {
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y);
+        ctx.lineTo(x + 4, y + 6);
         ctx.stroke();
       }
     }
@@ -854,10 +888,9 @@ export class Game {
 
 
   private renderObstacles() {
-    const { ctx, W, H } = this;
+    const { ctx, W } = this;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      // arrows use their own screen positioning + warning glyph
       if (o.kind === "arrow") {
         this.renderArrow(o);
         continue;
@@ -868,49 +901,60 @@ export class Game {
         const x = W / 2 + side * 28;
         ctx.save();
         ctx.translate(x, sy);
+        ctx.lineJoin = "round";
         switch (o.kind) {
           case "spike": {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "rgba(255,90,90,0.7)";
-            const g = ctx.createLinearGradient(side * -14, 0, side * 14, 0);
-            g.addColorStop(0, "#e8e2d0");
-            g.addColorStop(1, "#8f877a");
-            ctx.fillStyle = g;
+            // bright cartoon triangle
+            ctx.fillStyle = "#ff5d3a";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.moveTo(side * -14, 0);
             ctx.lineTo(side * 14, -10);
             ctx.lineTo(side * 14, 10);
             ctx.closePath();
             ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "rgba(0,0,0,0.45)";
-            this.roundedRect(side * 14 - 2, -12, 4, 24, 1.5);
+            ctx.stroke();
+            // highlight sliver
+            ctx.fillStyle = "#ffd7a8";
+            ctx.beginPath();
+            ctx.moveTo(side * -10, 0);
+            ctx.lineTo(side * 6, -5);
+            ctx.lineTo(side * 6, -1);
+            ctx.closePath();
             ctx.fill();
+            // dark base plate
+            ctx.fillStyle = "#4a2618";
+            ctx.strokeStyle = INK;
+            this.roundedRect(side * 12 - 3, -12, 6, 24, 2);
+            ctx.fill();
+            ctx.stroke();
             break;
           }
           case "blade": {
-            const r = 22;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = "rgba(180,200,255,0.7)";
+            const r = 20;
             ctx.rotate(o.phase);
-            const g = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
-            g.addColorStop(0, "#f4f0e6");
-            g.addColorStop(1, "#7d7568");
-            ctx.fillStyle = g;
-            for (let i = 0; i < 4; i++) {
-              ctx.rotate(Math.PI / 2);
-              ctx.beginPath();
-              ctx.moveTo(0, 0);
-              ctx.lineTo(r, -5);
-              ctx.lineTo(r, 5);
-              ctx.closePath();
-              ctx.fill();
+            // yellow disc with outlined gear teeth
+            ctx.fillStyle = "#ffd23f";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+              const a = (i / 8) * Math.PI * 2;
+              const rr = i % 2 === 0 ? r : r - 6;
+              const px = Math.cos(a) * rr;
+              const py = Math.sin(a) * rr;
+              if (i === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
             }
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "#2a2620";
-            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#ffb86b";
-            ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // dark hub
+            ctx.fillStyle = INK;
+            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ff5d3a";
+            ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill();
             break;
           }
         }
@@ -921,34 +965,34 @@ export class Game {
     }
   }
 
+
   private renderArrow(o: Obstacle) {
     const { ctx, W, H } = this;
     const side = (o.side || 1) as Side;
     const x = W / 2 + side * 28;
     if (o.phase < ARROW_WARN) {
-      // pulsing warning glyph at bottom
       const t = o.phase / ARROW_WARN;
       const pulse = 0.55 + 0.45 * Math.abs(Math.sin(o.phase * 18));
       const wy = H - 46;
       ctx.save();
       ctx.translate(x, wy);
-      // warning triangle
-      ctx.shadowBlur = 16;
-      ctx.shadowColor = `rgba(255,120,40,${pulse})`;
-      ctx.fillStyle = `rgba(255,180,60,${0.85 * pulse})`;
+      ctx.lineJoin = "round";
+      // flat warning triangle
+      ctx.fillStyle = `rgba(255,210,60,${0.9 * pulse + 0.1})`;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(0, -14);
       ctx.lineTo(13, 10);
       ctx.lineTo(-13, 10);
       ctx.closePath();
       ctx.fill();
-      ctx.shadowBlur = 0;
-      // exclamation mark
-      ctx.fillStyle = "#1a0a00";
+      ctx.stroke();
+      ctx.fillStyle = INK;
       ctx.fillRect(-1.5, -8, 3, 10);
       ctx.fillRect(-1.5, 5, 3, 3);
-      // upward chevrons hinting incoming vertical arrow
-      ctx.strokeStyle = `rgba(255,140,60,${0.7 * pulse})`;
+      // chevrons
+      ctx.strokeStyle = INK;
       ctx.lineWidth = 2;
       for (let i = 0; i < 3; i++) {
         const cy = 22 + i * 8 - t * 10;
@@ -961,64 +1005,47 @@ export class Game {
       ctx.restore();
       return;
     }
-    // flying arrow
+    // flying cartoon arrow
     const flyP = (o.phase - ARROW_WARN) / ARROW_FLY;
     const sy = (H + 20) + (-H - 40) * flyP;
     ctx.save();
     ctx.translate(x, sy);
-    // flame trail behind (below) the arrow
-    const trailG = ctx.createLinearGradient(0, 0, 0, 40);
-    trailG.addColorStop(0, "rgba(255,200,80,0.9)");
-    trailG.addColorStop(0.5, "rgba(255,90,20,0.6)");
-    trailG.addColorStop(1, "rgba(255,40,0,0)");
-    ctx.fillStyle = trailG;
-    ctx.beginPath();
-    ctx.moveTo(-6, 4);
-    ctx.quadraticCurveTo(0, 20, 6, 4);
-    ctx.lineTo(4, 36);
-    ctx.quadraticCurveTo(0, 44, -4, 36);
-    ctx.closePath();
-    ctx.fill();
+    ctx.lineJoin = "round";
     // shaft
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = "rgba(255,140,40,0.9)";
-    ctx.fillStyle = "#3a2416";
-    this.roundedRect(-1.6, -10, 3.2, 22, 1);
+    ctx.fillStyle = "#8a5a2a";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    this.roundedRect(-2, -10, 4, 22, 1.5);
     ctx.fill();
+    ctx.stroke();
     // arrowhead
     ctx.fillStyle = "#e8e2d0";
     ctx.beginPath();
-    ctx.moveTo(0, -18);
-    ctx.lineTo(7, -6);
-    ctx.lineTo(-7, -6);
+    ctx.moveTo(0, -20);
+    ctx.lineTo(8, -6);
+    ctx.lineTo(-8, -6);
     ctx.closePath();
     ctx.fill();
-    // fletching
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = "#ff5a1f";
+    ctx.stroke();
+    // fletching (bright)
+    ctx.fillStyle = "#ff5d3a";
     ctx.beginPath();
-    ctx.moveTo(-1.6, 10);
-    ctx.lineTo(-6, 16);
-    ctx.lineTo(-1.6, 14);
+    ctx.moveTo(-2, 10);
+    ctx.lineTo(-8, 16);
+    ctx.lineTo(-2, 14);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(1.6, 10);
-    ctx.lineTo(6, 16);
-    ctx.lineTo(1.6, 14);
+    ctx.moveTo(2, 10);
+    ctx.lineTo(8, 16);
+    ctx.lineTo(2, 14);
     ctx.closePath();
     ctx.fill();
-    // flame licking the head
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = "rgba(255,180,40,0.9)";
-    ctx.fillStyle = "rgba(255,210,110,0.85)";
-    ctx.beginPath();
-    ctx.moveTo(0, -22);
-    ctx.quadraticCurveTo(5, -16, 0, -10);
-    ctx.quadraticCurveTo(-5, -16, 0, -22);
-    ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
+
 
   private renderCoins() {
     const { ctx, W } = this;
@@ -1027,34 +1054,70 @@ export class Game {
       const sy = this.worldToScreenY(c.y);
       if (sy < -20 || sy > this.H + 20) continue;
       const x = W / 2 + c.side * 28;
-      const w = Math.abs(Math.cos(c.spin)) * 10 + 2;
-      ctx.fillStyle = "#ffd54a";
+      const w = Math.abs(Math.cos(c.spin)) * 9 + 3;
+      ctx.fillStyle = "#ffd23f";
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.ellipse(x, sy, w, 10, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#b8801f";
-      ctx.lineWidth = 1.2;
       ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.fillRect(x - w * 0.4, sy - 5, 2, 4);
+      // "S" mark
+      ctx.strokeStyle = "#8a5a1a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.35, sy - 3);
+      ctx.lineTo(x + w * 0.35, sy - 3);
+      ctx.moveTo(x - w * 0.35, sy + 3);
+      ctx.lineTo(x + w * 0.35, sy + 3);
+      ctx.stroke();
     }
   }
 
   private renderParticles() {
     const { ctx } = this;
+    ctx.lineJoin = "round";
     for (const p of this.particles) {
       if (!p.active) continue;
       const a = Math.max(0, p.life / p.max);
       if (p.kind === "smoke") {
-        ctx.globalAlpha = a * 0.6;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (1 + (1 - a) * 1.5), 0, Math.PI * 2);
-        ctx.fill();
-      } else if (p.kind === "spark" || p.kind === "hit") {
         ctx.globalAlpha = a;
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1.5;
+        const r = p.size * (1 + (1 - a) * 1.2);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (p.kind === "spark") {
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (p.kind === "hit") {
+        // comic starburst point
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1.5;
+        const s = p.size * 1.6;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const ang = (i / 8) * Math.PI * 2;
+          const rr = i % 2 === 0 ? s : s * 0.45;
+          const px = p.x + Math.cos(ang) * rr;
+          const py = p.y + Math.sin(ang) * rr;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
       }
     }
     ctx.globalAlpha = 1;
@@ -1069,12 +1132,11 @@ export class Game {
     const now = performance.now() / 1000;
     const invuln = now < this.invulnUntil;
 
-    // soft ground shadow / rim glow behind ninja
-    const halo = ctx.createRadialGradient(x, y, 0, x, y, 40);
-    halo.addColorStop(0, "rgba(0,0,0,0.45)");
-    halo.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = halo;
-    ctx.fillRect(x - 40, y - 40, 80, 80);
+    // flat oval shadow beneath
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 16, 14, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.save();
     ctx.translate(x, y);
@@ -1082,53 +1144,104 @@ export class Game {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
-    // subtle rim glow
-    ctx.shadowBlur = invuln ? 20 : 10;
-    ctx.shadowColor = invuln ? "rgba(255,255,255,0.9)" : this.rgba(ch.sash, 0.7);
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = INK;
 
-    // body with gradient
-    const bg = ctx.createLinearGradient(-10, -14, 10, 12);
-    bg.addColorStop(0, ch.body);
-    bg.addColorStop(1, this.lerpColor(ch.body, "#000000", 0.35));
-    ctx.fillStyle = bg;
+    // body (flat)
+    ctx.fillStyle = ch.body;
+    ctx.lineWidth = 2.5;
     this.roundedRect(-10, -14, 20, 26, 6);
     ctx.fill();
+    ctx.stroke();
 
-    // head
-    const hg = ctx.createRadialGradient(-2, -18, 1, 0, -16, 9);
-    hg.addColorStop(0, this.lerpColor(ch.body, "#ffffff", 0.15));
-    hg.addColorStop(1, ch.body);
-    ctx.fillStyle = hg;
+    // cel-shade highlight wedge on the body
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(0, -16, 8, 0, Math.PI * 2);
+    this.roundedRect(-10, -14, 20, 26, 6);
+    ctx.clip();
+    ctx.fillStyle = this.lerpColor(ch.body, "#ffffff", 0.22);
+    ctx.beginPath();
+    ctx.moveTo(-10, -14);
+    ctx.lineTo(-2, -14);
+    ctx.lineTo(-10, 12);
+    ctx.closePath();
     ctx.fill();
-
-    ctx.shadowBlur = 0;
-
-    // mask band
-    ctx.fillStyle = ch.trim;
-    this.roundedRect(-7, -18, 14, 3, 1);
-    ctx.fill();
-    // glowing eyes
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = "rgba(255,220,120,0.9)";
-    ctx.fillStyle = "#fff8d0";
-    ctx.fillRect(-5, -18, 3, 2);
-    ctx.fillRect(2, -18, 3, 2);
-    ctx.shadowBlur = 0;
+    ctx.restore();
 
     // sash
-    const sg = ctx.createLinearGradient(-10, -4, 10, 0);
-    sg.addColorStop(0, ch.sash);
-    sg.addColorStop(1, this.lerpColor(ch.sash, "#ffffff", 0.2));
-    ctx.fillStyle = sg;
-    this.roundedRect(-10, -4, 20, 4, 1.5);
+    ctx.fillStyle = ch.sash;
+    ctx.lineWidth = 2.5;
+    this.roundedRect(-11, -4, 22, 5, 2);
     ctx.fill();
+    ctx.stroke();
 
     // arm gripping rope
     ctx.fillStyle = ch.body;
-    this.roundedRect(this.ninjaSide * -12, -8, 6, 4, 1.5);
+    ctx.lineWidth = 2;
+    this.roundedRect(this.ninjaSide * -13, -9, 7, 5, 2);
     ctx.fill();
+    ctx.stroke();
+
+    // head
+    ctx.fillStyle = ch.body;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, -17, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // mask band (headband color)
+    ctx.fillStyle = ch.trim;
+    ctx.lineWidth = 2;
+    this.roundedRect(-9, -20, 18, 5, 1.5);
+    ctx.fill();
+    ctx.stroke();
+    // headband tail flapping
+    const flap = Math.sin(performance.now() / 120) * 2;
+    ctx.fillStyle = ch.trim;
+    ctx.beginPath();
+    ctx.moveTo(this.ninjaSide * 9, -19);
+    ctx.lineTo(this.ninjaSide * 18, -22 + flap);
+    ctx.lineTo(this.ninjaSide * 18, -17 + flap);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // big cartoon eyes (whites)
+    ctx.fillStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(-3.5, -14, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(3.5, -14, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // pupils (look toward direction of motion)
+    ctx.fillStyle = INK;
+    const px = this.ninjaSide * 0.9;
+    ctx.beginPath();
+    ctx.arc(-3.5 + px, -13.5, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(3.5 + px, -13.5, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // little smile
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, -9, 2.5, 0, Math.PI);
+    ctx.stroke();
+
+    // invuln flash outline
+    if (invuln) {
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      this.roundedRect(-12, -24, 24, 38, 8);
+      ctx.stroke();
+    }
 
     ctx.restore();
   }
