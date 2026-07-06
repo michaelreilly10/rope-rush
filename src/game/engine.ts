@@ -888,10 +888,9 @@ export class Game {
 
 
   private renderObstacles() {
-    const { ctx, W, H } = this;
+    const { ctx, W } = this;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      // arrows use their own screen positioning + warning glyph
       if (o.kind === "arrow") {
         this.renderArrow(o);
         continue;
@@ -902,49 +901,60 @@ export class Game {
         const x = W / 2 + side * 28;
         ctx.save();
         ctx.translate(x, sy);
+        ctx.lineJoin = "round";
         switch (o.kind) {
           case "spike": {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "rgba(255,90,90,0.7)";
-            const g = ctx.createLinearGradient(side * -14, 0, side * 14, 0);
-            g.addColorStop(0, "#e8e2d0");
-            g.addColorStop(1, "#8f877a");
-            ctx.fillStyle = g;
+            // bright cartoon triangle
+            ctx.fillStyle = "#ff5d3a";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.moveTo(side * -14, 0);
             ctx.lineTo(side * 14, -10);
             ctx.lineTo(side * 14, 10);
             ctx.closePath();
             ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "rgba(0,0,0,0.45)";
-            this.roundedRect(side * 14 - 2, -12, 4, 24, 1.5);
+            ctx.stroke();
+            // highlight sliver
+            ctx.fillStyle = "#ffd7a8";
+            ctx.beginPath();
+            ctx.moveTo(side * -10, 0);
+            ctx.lineTo(side * 6, -5);
+            ctx.lineTo(side * 6, -1);
+            ctx.closePath();
             ctx.fill();
+            // dark base plate
+            ctx.fillStyle = "#4a2618";
+            ctx.strokeStyle = INK;
+            this.roundedRect(side * 12 - 3, -12, 6, 24, 2);
+            ctx.fill();
+            ctx.stroke();
             break;
           }
           case "blade": {
-            const r = 22;
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = "rgba(180,200,255,0.7)";
+            const r = 20;
             ctx.rotate(o.phase);
-            const g = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
-            g.addColorStop(0, "#f4f0e6");
-            g.addColorStop(1, "#7d7568");
-            ctx.fillStyle = g;
-            for (let i = 0; i < 4; i++) {
-              ctx.rotate(Math.PI / 2);
-              ctx.beginPath();
-              ctx.moveTo(0, 0);
-              ctx.lineTo(r, -5);
-              ctx.lineTo(r, 5);
-              ctx.closePath();
-              ctx.fill();
+            // yellow disc with outlined gear teeth
+            ctx.fillStyle = "#ffd23f";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+              const a = (i / 8) * Math.PI * 2;
+              const rr = i % 2 === 0 ? r : r - 6;
+              const px = Math.cos(a) * rr;
+              const py = Math.sin(a) * rr;
+              if (i === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
             }
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "#2a2620";
-            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#ffb86b";
-            ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // dark hub
+            ctx.fillStyle = INK;
+            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ff5d3a";
+            ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill();
             break;
           }
         }
@@ -954,6 +964,7 @@ export class Game {
       else renderSide(o.side as Side);
     }
   }
+
 
   private renderArrow(o: Obstacle) {
     const { ctx, W, H } = this;
