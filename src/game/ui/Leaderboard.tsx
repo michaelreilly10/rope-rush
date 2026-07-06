@@ -91,7 +91,7 @@ export function Leaderboard({
         {entries && entries.length > 0 && (
           <ol className="divide-y divide-white/5">
             {entries.map((e, i) => {
-              const isMine = highlightId === e.id;
+              const isMine = myIds.has(e.id) || highlightId === e.id;
               return (
                 <li
                   key={e.id}
