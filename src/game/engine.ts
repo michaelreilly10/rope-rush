@@ -23,36 +23,38 @@ const BASE_SPEED = 6; // m/s
 const MAX_SPEED = 28;
 const SPEED_ACCEL = 0.18; // per second
 
+const INK = "#0d0a08";
+
 const THEMES: ThemePalette[] = [
   {
-    id: "grid",
-    name: "Neo Grid",
-    bg: "#05070f",
-    bgFar: "#0a0e27",
-    bgNear: "#1a1f4e",
-    beam: "#1e2a6b",
-    accent: "#00d9ff",
-    lantern: "#ff2e63",
+    id: "rooftops",
+    name: "Sunny Rooftops",
+    bg: "#8ec7ff",
+    bgFar: "#5aa8ff",
+    bgNear: "#f6c744",
+    beam: "#c76b2a",
+    accent: "#ff5d5d",
+    lantern: "#ffd23f",
   },
   {
-    id: "hive",
-    name: "Neon Hive",
-    bg: "#07030f",
-    bgFar: "#160a2e",
-    bgNear: "#2e1466",
-    beam: "#3a1a6b",
-    accent: "#ff2e63",
-    lantern: "#c74dff",
+    id: "jungle",
+    name: "Jungle Cartoon",
+    bg: "#b7e86a",
+    bgFar: "#5aa84a",
+    bgNear: "#2f6b2a",
+    beam: "#7a4a1a",
+    accent: "#ff8a3d",
+    lantern: "#ffe14a",
   },
   {
-    id: "circuit",
-    name: "Circuit Vault",
-    bg: "#020a0a",
-    bgFar: "#062a2e",
-    bgNear: "#0a4a52",
-    beam: "#0e6a70",
-    accent: "#3affbf",
-    lantern: "#00d9ff",
+    id: "sunset",
+    name: "Comic Sunset",
+    bg: "#ffd06a",
+    bgFar: "#ff8a3d",
+    bgNear: "#c74a6b",
+    beam: "#5a2a5a",
+    accent: "#3ac0ff",
+    lantern: "#fff2a8",
   },
 ];
 
