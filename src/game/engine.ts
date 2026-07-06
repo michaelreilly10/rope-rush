@@ -1054,34 +1054,70 @@ export class Game {
       const sy = this.worldToScreenY(c.y);
       if (sy < -20 || sy > this.H + 20) continue;
       const x = W / 2 + c.side * 28;
-      const w = Math.abs(Math.cos(c.spin)) * 10 + 2;
-      ctx.fillStyle = "#ffd54a";
+      const w = Math.abs(Math.cos(c.spin)) * 9 + 3;
+      ctx.fillStyle = "#ffd23f";
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.ellipse(x, sy, w, 10, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#b8801f";
-      ctx.lineWidth = 1.2;
       ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
-      ctx.fillRect(x - w * 0.4, sy - 5, 2, 4);
+      // "S" mark
+      ctx.strokeStyle = "#8a5a1a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.35, sy - 3);
+      ctx.lineTo(x + w * 0.35, sy - 3);
+      ctx.moveTo(x - w * 0.35, sy + 3);
+      ctx.lineTo(x + w * 0.35, sy + 3);
+      ctx.stroke();
     }
   }
 
   private renderParticles() {
     const { ctx } = this;
+    ctx.lineJoin = "round";
     for (const p of this.particles) {
       if (!p.active) continue;
       const a = Math.max(0, p.life / p.max);
       if (p.kind === "smoke") {
-        ctx.globalAlpha = a * 0.6;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (1 + (1 - a) * 1.5), 0, Math.PI * 2);
-        ctx.fill();
-      } else if (p.kind === "spark" || p.kind === "hit") {
         ctx.globalAlpha = a;
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1.5;
+        const r = p.size * (1 + (1 - a) * 1.2);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (p.kind === "spark") {
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (p.kind === "hit") {
+        // comic starburst point
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1.5;
+        const s = p.size * 1.6;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const ang = (i / 8) * Math.PI * 2;
+          const rr = i % 2 === 0 ? s : s * 0.45;
+          const px = p.x + Math.cos(ang) * rr;
+          const py = p.y + Math.sin(ang) * rr;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
       }
     }
     ctx.globalAlpha = 1;
@@ -1096,12 +1132,11 @@ export class Game {
     const now = performance.now() / 1000;
     const invuln = now < this.invulnUntil;
 
-    // soft ground shadow / rim glow behind ninja
-    const halo = ctx.createRadialGradient(x, y, 0, x, y, 40);
-    halo.addColorStop(0, "rgba(0,0,0,0.45)");
-    halo.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = halo;
-    ctx.fillRect(x - 40, y - 40, 80, 80);
+    // flat oval shadow beneath
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 16, 14, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.save();
     ctx.translate(x, y);
@@ -1109,53 +1144,104 @@ export class Game {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
-    // subtle rim glow
-    ctx.shadowBlur = invuln ? 20 : 10;
-    ctx.shadowColor = invuln ? "rgba(255,255,255,0.9)" : this.rgba(ch.sash, 0.7);
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = INK;
 
-    // body with gradient
-    const bg = ctx.createLinearGradient(-10, -14, 10, 12);
-    bg.addColorStop(0, ch.body);
-    bg.addColorStop(1, this.lerpColor(ch.body, "#000000", 0.35));
-    ctx.fillStyle = bg;
+    // body (flat)
+    ctx.fillStyle = ch.body;
+    ctx.lineWidth = 2.5;
     this.roundedRect(-10, -14, 20, 26, 6);
     ctx.fill();
+    ctx.stroke();
 
-    // head
-    const hg = ctx.createRadialGradient(-2, -18, 1, 0, -16, 9);
-    hg.addColorStop(0, this.lerpColor(ch.body, "#ffffff", 0.15));
-    hg.addColorStop(1, ch.body);
-    ctx.fillStyle = hg;
+    // cel-shade highlight wedge on the body
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(0, -16, 8, 0, Math.PI * 2);
+    this.roundedRect(-10, -14, 20, 26, 6);
+    ctx.clip();
+    ctx.fillStyle = this.lerpColor(ch.body, "#ffffff", 0.22);
+    ctx.beginPath();
+    ctx.moveTo(-10, -14);
+    ctx.lineTo(-2, -14);
+    ctx.lineTo(-10, 12);
+    ctx.closePath();
     ctx.fill();
-
-    ctx.shadowBlur = 0;
-
-    // mask band
-    ctx.fillStyle = ch.trim;
-    this.roundedRect(-7, -18, 14, 3, 1);
-    ctx.fill();
-    // glowing eyes
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = "rgba(255,220,120,0.9)";
-    ctx.fillStyle = "#fff8d0";
-    ctx.fillRect(-5, -18, 3, 2);
-    ctx.fillRect(2, -18, 3, 2);
-    ctx.shadowBlur = 0;
+    ctx.restore();
 
     // sash
-    const sg = ctx.createLinearGradient(-10, -4, 10, 0);
-    sg.addColorStop(0, ch.sash);
-    sg.addColorStop(1, this.lerpColor(ch.sash, "#ffffff", 0.2));
-    ctx.fillStyle = sg;
-    this.roundedRect(-10, -4, 20, 4, 1.5);
+    ctx.fillStyle = ch.sash;
+    ctx.lineWidth = 2.5;
+    this.roundedRect(-11, -4, 22, 5, 2);
     ctx.fill();
+    ctx.stroke();
 
     // arm gripping rope
     ctx.fillStyle = ch.body;
-    this.roundedRect(this.ninjaSide * -12, -8, 6, 4, 1.5);
+    ctx.lineWidth = 2;
+    this.roundedRect(this.ninjaSide * -13, -9, 7, 5, 2);
     ctx.fill();
+    ctx.stroke();
+
+    // head
+    ctx.fillStyle = ch.body;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, -17, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // mask band (headband color)
+    ctx.fillStyle = ch.trim;
+    ctx.lineWidth = 2;
+    this.roundedRect(-9, -20, 18, 5, 1.5);
+    ctx.fill();
+    ctx.stroke();
+    // headband tail flapping
+    const flap = Math.sin(performance.now() / 120) * 2;
+    ctx.fillStyle = ch.trim;
+    ctx.beginPath();
+    ctx.moveTo(this.ninjaSide * 9, -19);
+    ctx.lineTo(this.ninjaSide * 18, -22 + flap);
+    ctx.lineTo(this.ninjaSide * 18, -17 + flap);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // big cartoon eyes (whites)
+    ctx.fillStyle = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(-3.5, -14, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(3.5, -14, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // pupils (look toward direction of motion)
+    ctx.fillStyle = INK;
+    const px = this.ninjaSide * 0.9;
+    ctx.beginPath();
+    ctx.arc(-3.5 + px, -13.5, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(3.5 + px, -13.5, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // little smile
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, -9, 2.5, 0, Math.PI);
+    ctx.stroke();
+
+    // invuln flash outline
+    if (invuln) {
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      this.roundedRect(-12, -24, 24, 38, 8);
+      ctx.stroke();
+    }
 
     ctx.restore();
   }
