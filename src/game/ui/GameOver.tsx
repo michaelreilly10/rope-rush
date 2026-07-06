@@ -104,7 +104,7 @@ export function GameOver({
         </div>
       ) : (
         <>
-          <div className="text-[10px] uppercase tracking-[0.5em] text-[#ff2e63]">System Down</div>
+          <div className="text-[10px] uppercase tracking-[0.5em] text-[#ff2e63]">GAME OVER</div>
           <h2
             className="mt-3 font-display text-6xl text-white"
             style={{
