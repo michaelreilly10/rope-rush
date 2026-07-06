@@ -71,6 +71,15 @@ export function RopeRush() {
         <>
           {hud.phase === "menu" && (
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-black/30 via-black/50 to-black/80">
+              <h1
+                className="mb-6 font-display text-5xl leading-none text-white"
+                style={{
+                  textShadow:
+                    "0 0 12px rgba(0,217,255,0.9), 0 0 32px rgba(0,217,255,0.55), 0 0 60px rgba(255,46,99,0.35)",
+                }}
+              >
+                ROPE<span className="text-[#ff2e63]">RUSH</span>
+              </h1>
               {hud.best > 0 && (
                 <div className="mb-6 rounded-full border border-cyan-300/30 bg-black/40 px-4 py-1 text-xs uppercase tracking-widest text-cyan-200/80">
                   Best · {hud.best}m
@@ -82,18 +91,9 @@ export function RopeRush() {
               >
                 TAP TO START
               </div>
-              <div className="mb-8 text-[11px] uppercase tracking-widest text-white/40">
+              <div className="text-[11px] uppercase tracking-widest text-white/40">
                 Tap to switch sides · Dodge everything
               </div>
-              <h1
-                className="font-display text-5xl leading-none text-white"
-                style={{
-                  textShadow:
-                    "0 0 12px rgba(0,217,255,0.9), 0 0 32px rgba(0,217,255,0.55), 0 0 60px rgba(255,46,99,0.35)",
-                }}
-              >
-                ROPE<span className="text-[#ff2e63]">RUSH</span>
-              </h1>
             </div>
           )}
           {hud.phase === "playing" && (
