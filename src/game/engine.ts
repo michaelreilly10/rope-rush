@@ -804,14 +804,65 @@ export class Game {
       }
     }
 
-    // small sun/moon disc top-right for extra cartoon warmth
-    ctx.fillStyle = lantern;
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(W - 44, 60, 22, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // time-of-day: cycleT goes 0 (dawn/day) -> 1 (sunset) -> 2 (night) -> 3 (loop)
+    const cycleT = this.themeIndex + this.themeT;
+    const horizonY = H * 0.55;
+
+    // stars at night — fade in from sunset->night, fade out at end of night
+    const nightAmt = cycleT < 1
+      ? 0
+      : cycleT < 2
+        ? (cycleT - 1) * 0.6
+        : cycleT < 2.85
+          ? 0.6 + (cycleT - 2) * 0.4
+          : Math.max(0, 1 - (cycleT - 2.85) / 0.15);
+    if (nightAmt > 0.05) {
+      ctx.fillStyle = `rgba(255,255,240,${nightAmt})`;
+      const starSeed = 1337;
+      for (let i = 0; i < 40; i++) {
+        const sx = ((i * 733 + starSeed) % 1000) / 1000 * W;
+        const sy = ((i * 991 + starSeed) % 1000) / 1000 * (horizonY - 20);
+        const twinkle = 0.6 + 0.4 * Math.sin(performance.now() / 400 + i);
+        ctx.globalAlpha = nightAmt * twinkle;
+        const r = i % 5 === 0 ? 1.6 : 1;
+        ctx.beginPath();
+        ctx.arc(sx, sy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // sun visible during day + sunset (cycleT 0..2), moon during night (2..3)
+    const drawDisc = (cx: number, cy: number, r: number, fill: string, isMoon: boolean) => {
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      if (isMoon) {
+        // crescent shadow
+        ctx.fillStyle = this.themeMix("bg");
+        ctx.beginPath();
+        ctx.arc(cx + r * 0.45, cy - r * 0.15, r * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    if (cycleT < 2) {
+      // sun arc across day + sunset
+      const t = cycleT / 2; // 0..1
+      const sx = 60 + t * (W - 120);
+      const sy = horizonY + 30 - Math.sin(Math.PI * t) * (horizonY - 40);
+      drawDisc(sx, sy, 24, lantern, false);
+    } else {
+      // moon arc during night
+      const t = cycleT - 2; // 0..1
+      const mx = 60 + t * (W - 120);
+      const my = horizonY + 30 - Math.sin(Math.PI * t) * (horizonY - 40);
+      drawDisc(mx, my, 20, "#f4f0d0", true);
+    }
   }
 
 
