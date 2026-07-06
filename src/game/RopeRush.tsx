@@ -106,14 +106,15 @@ export function RopeRush() {
           {hud.phase === "paused" && (
             <PauseOverlay
               onResume={() => game.resumePlay()}
-              onMenu={() => { game.endRun(); game.startRun(); }}
+              onMenu={() => { game.endRun(); beginRun(); }}
             />
           )}
           {hud.phase === "gameover" && (
             <GameOver
               hud={hud}
+              sessionToken={sessionToken}
               onContinue={() => game.continueWithAd()}
-              onRetry={() => game.startRun()}
+              onRetry={() => beginRun()}
               onLeaderboard={(id) => { setLbHighlight(id ?? null); setLbOpen(true); }}
             />
           )}
