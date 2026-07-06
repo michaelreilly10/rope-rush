@@ -5,6 +5,7 @@ import { submitScore } from "@/lib/leaderboard.functions";
 
 const NAME_KEY = "rr.playerName";
 const MY_SCORES_KEY = "rr.myScores";
+const SUBMITTED_TOKENS_KEY = "rr.submittedTokens";
 
 function readMyScoreIds(): string[] {
   try {
@@ -24,6 +25,32 @@ function addMyScoreId(id: string) {
     localStorage.setItem(MY_SCORES_KEY, JSON.stringify(Array.from(ids)));
   } catch {}
 }
+
+function readSubmittedTokens(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SUBMITTED_TOKENS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function hasSubmittedToken(token: string): boolean {
+  return readSubmittedTokens().has(token);
+}
+
+function markTokenSubmitted(token: string) {
+  try {
+    const set = readSubmittedTokens();
+    set.add(token);
+    // Cap size to avoid unbounded growth.
+    const arr = Array.from(set).slice(-100);
+    localStorage.setItem(SUBMITTED_TOKENS_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
 
 export function GameOver({
   hud,
