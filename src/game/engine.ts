@@ -727,7 +727,8 @@ export class Game {
 
   private initClouds() {
     const cloudSpacing = 220;
-    const cloudMargin = 120;
+    const speedRatio = this.speed / BASE_SPEED;
+    const cloudMargin = 120 * speedRatio;
     const H = this.H;
     const count = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
     this.clouds = [];
@@ -741,10 +742,22 @@ export class Game {
   }
 
   private updateClouds(dt: number) {
-    const cloudMargin = 120;
+    const speedRatio = this.speed / BASE_SPEED;
+    const cloudMargin = 120 * speedRatio;
     const cloudSpacing = 220;
     const H = this.H;
     const drift = this.speed * 6;
+
+    // grow the pool if the expanded zone needs more clouds
+    const needed = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
+    while (this.clouds.length < needed) {
+      const maxY = this.clouds.length > 0 ? Math.max(...this.clouds.map((c) => c.y)) : H + cloudMargin;
+      this.clouds.push({
+        y: maxY + cloudSpacing,
+        x: 40 + Math.random() * (this.W - 80),
+        s: 0.85 + Math.random() * 0.6,
+      });
+    }
 
     for (const c of this.clouds) {
       c.y -= drift * dt;
@@ -766,7 +779,8 @@ export class Game {
     const lantern = this.themeMix("lantern");
 
     // parallax puffy clouds — drift up from below the screen and exit off the top
-    const cloudMargin = 120;
+    const speedRatio = this.speed / BASE_SPEED;
+    const cloudMargin = 120 * speedRatio;
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
     // draw bottom clouds first so top clouds overlap correctly
