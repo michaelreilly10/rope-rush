@@ -121,7 +121,7 @@ export class Game {
   obstacles: Obstacle[] = [];
   coins: Coin[] = [];
   particles: Particle[] = [];
-  clouds: { y: number; x: number; s: number }[] = [];
+  cloudLayers: { y: number; x: number; s: number }[][] = [[], [], []];
 
   // timing
   private lastT = 0;
