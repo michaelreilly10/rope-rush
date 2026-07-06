@@ -57,6 +57,7 @@ export function GameOver({
           submit({ data: { name: saved, score: hud.score, token: sessionToken } })
             .then((res) => {
               if (res.ok) {
+                addMyScoreId(res.id);
                 setSubmittedId(res.id);
                 setStatus("done");
               } else {
