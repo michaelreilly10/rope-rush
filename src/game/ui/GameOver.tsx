@@ -27,8 +27,28 @@ export function GameOver({
   useEffect(() => {
     try {
       const saved = localStorage.getItem(NAME_KEY);
-      if (saved) setName(saved);
+      if (saved) {
+        setName(saved);
+        if (hud.score >= 1 && status === "idle") {
+          setStatus("submitting");
+          submit({ data: { name: saved, score: hud.score } })
+            .then((res) => {
+              if (res.ok) {
+                setSubmittedId(res.id);
+                setStatus("done");
+              } else {
+                setStatus("error");
+                setError(res.error);
+              }
+            })
+            .catch((e) => {
+              setStatus("error");
+              setError(String((e as Error)?.message ?? e));
+            });
+        }
+      }
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const playAd = () => {
