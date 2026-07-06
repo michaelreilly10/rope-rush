@@ -2,6 +2,19 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTopScores, type LeaderboardEntry } from "@/lib/leaderboard.functions";
 
+const MY_SCORES_KEY = "rr.myScores";
+
+function readMyScoreIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(MY_SCORES_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
 export function Leaderboard({
   open,
   onClose,
@@ -14,12 +27,14 @@ export function Leaderboard({
   const fetchTop = useServerFn(getTopScores);
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [myIds, setMyIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setEntries(null);
     setErr(null);
+    setMyIds(readMyScoreIds());
     fetchTop()
       .then((res) => {
         if (!cancelled) setEntries(res.entries);
