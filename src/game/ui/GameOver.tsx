@@ -226,7 +226,7 @@ export function GameOver({
             Best {hud.best}m {hud.score >= hud.best && hud.score > 0 && "· NEW RECORD"}
           </div>
 
-          {hud.score > 0 && !hud.canContinue && status !== "done" && (
+          {hud.score > 0 && status !== "done" && (
             <div className="mt-6 w-full max-w-xs">
               <label className="mb-1 block text-[10px] uppercase tracking-[0.3em] text-cyan-300/70">
                 Submit to Leaderboard
