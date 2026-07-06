@@ -106,6 +106,7 @@ export function GameOver({
       const res = await submit({ data: { name: trimmed, score: hud.score, token: sessionToken } });
       if (res.ok) {
         try { localStorage.setItem(NAME_KEY, trimmed); } catch {}
+        addMyScoreId(res.id);
         setSubmittedId(res.id);
         setStatus("done");
       } else {
