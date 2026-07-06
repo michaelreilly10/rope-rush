@@ -75,12 +75,18 @@ export function GameOver({
 
   useEffect(() => {
     if (hud.canContinue) return; // wait until the run is truly final
+    if (!sessionToken) return;
+    if (hasSubmittedToken(sessionToken)) {
+      setStatus("done");
+      return;
+    }
     try {
       const saved = localStorage.getItem(NAME_KEY);
       if (saved) {
         setName(saved);
-        if (hud.score >= 1 && status === "idle" && sessionToken) {
+        if (hud.score >= 1 && status === "idle") {
           setStatus("submitting");
+          markTokenSubmitted(sessionToken);
           submit({ data: { name: saved, score: hud.score, token: sessionToken } })
             .then((res) => {
               if (res.ok) {
@@ -100,7 +106,8 @@ export function GameOver({
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hud.canContinue]);
+  }, [hud.canContinue, sessionToken]);
+
 
 
   const playAd = () => {
