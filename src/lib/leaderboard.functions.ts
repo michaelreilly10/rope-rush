@@ -103,7 +103,7 @@ export const submitScore = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: row, error } = await supabaseAdmin
         .from("leaderboard_scores")
-        .insert({ name: data.name, score: data.score })
+        .insert({ name: data.name, score: data.score, session_id: parsed.sid })
         .select("id")
         .single();
       if (error || !row) {
@@ -113,3 +113,29 @@ export const submitScore = createServerFn({ method: "POST" })
       return { ok: true, id: row.id };
     },
   );
+
+const deleteSchema = z.object({
+  id: z.string().uuid(),
+  token: z.string().min(10).max(256),
+});
+
+export const deleteScoreForContinue = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => deleteSchema.parse(input))
+  .handler(
+    async ({ data }): Promise<{ ok: boolean }> => {
+      const parsed = verifyToken(data.token);
+      if (!parsed) return { ok: false };
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin
+        .from("leaderboard_scores")
+        .delete()
+        .eq("id", data.id)
+        .eq("session_id", parsed.sid);
+      if (error) {
+        console.error("deleteScoreForContinue error:", error);
+        return { ok: false };
+      }
+      return { ok: true };
+    },
+  );
+

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { HUDState } from "../types";
-import { submitScore } from "@/lib/leaderboard.functions";
+import { submitScore, deleteScoreForContinue } from "@/lib/leaderboard.functions";
+
 
 const NAME_KEY = "rr.playerName";
 const MY_SCORES_KEY = "rr.myScores";
@@ -51,6 +52,22 @@ function markTokenSubmitted(token: string) {
   } catch {}
 }
 
+function unmarkTokenSubmitted(token: string) {
+  try {
+    const set = readSubmittedTokens();
+    set.delete(token);
+    localStorage.setItem(SUBMITTED_TOKENS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+function removeMyScoreId(id: string) {
+  try {
+    const ids = readMyScoreIds().filter((x) => x !== id);
+    localStorage.setItem(MY_SCORES_KEY, JSON.stringify(ids));
+  } catch {}
+}
+
+
 
 export function GameOver({
   hud,
@@ -68,13 +85,16 @@ export function GameOver({
   const [showAd, setShowAd] = useState(false);
   const [adProgress, setAdProgress] = useState(0);
   const submit = useServerFn(submitScore);
+  const deleteScore = useServerFn(deleteScoreForContinue);
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (hud.canContinue) return; // wait until the run is truly final
+    // Submit provisionally on every game-over, including when the player has
+    // a continue option — if they don't watch the ad, the score stays. If
+    // they do continue, we delete this row before the ad resolves.
     if (!sessionToken) return;
     if (hasSubmittedToken(sessionToken)) {
       setStatus("done");
@@ -96,21 +116,36 @@ export function GameOver({
               } else {
                 setStatus("error");
                 setError(res.error);
+                unmarkTokenSubmitted(sessionToken);
               }
             })
             .catch((e) => {
               setStatus("error");
               setError(String((e as Error)?.message ?? e));
+              unmarkTokenSubmitted(sessionToken);
             });
         }
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hud.canContinue, sessionToken]);
+  }, [sessionToken]);
 
 
 
   const playAd = () => {
+    // As soon as the player commits to the ad, retract any provisional
+    // submission for this run so only the final score can ever be uploaded.
+    const idToRemove = submittedId;
+    const tokenAtStart = sessionToken;
+    if (idToRemove && tokenAtStart) {
+      removeMyScoreId(idToRemove);
+      deleteScore({ data: { id: idToRemove, token: tokenAtStart } }).catch(() => {});
+      setSubmittedId(null);
+    }
+    if (tokenAtStart) unmarkTokenSubmitted(tokenAtStart);
+    setStatus("idle");
+    setError(null);
+
     setShowAd(true);
     setAdProgress(0);
     const start = performance.now();
@@ -125,6 +160,8 @@ export function GameOver({
     };
     requestAnimationFrame(tick);
   };
+
+
 
   const doSubmit = async () => {
     const trimmed = name.trim();
@@ -189,7 +226,7 @@ export function GameOver({
             Best {hud.best}m {hud.score >= hud.best && hud.score > 0 && "· NEW RECORD"}
           </div>
 
-          {hud.score > 0 && !hud.canContinue && status !== "done" && (
+          {hud.score > 0 && status !== "done" && (
             <div className="mt-6 w-full max-w-xs">
               <label className="mb-1 block text-[10px] uppercase tracking-[0.3em] text-cyan-300/70">
                 Submit to Leaderboard
