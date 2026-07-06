@@ -1,3 +1,4 @@
+import { Trophy } from "lucide-react";
 import type { HUDState } from "../types";
 
 const heart = (filled: boolean, key: number) => (
