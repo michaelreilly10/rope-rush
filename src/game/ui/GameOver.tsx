@@ -4,6 +4,26 @@ import type { HUDState } from "../types";
 import { submitScore } from "@/lib/leaderboard.functions";
 
 const NAME_KEY = "rr.playerName";
+const MY_SCORES_KEY = "rr.myScores";
+
+function readMyScoreIds(): string[] {
+  try {
+    const raw = localStorage.getItem(MY_SCORES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function addMyScoreId(id: string) {
+  try {
+    const ids = new Set(readMyScoreIds());
+    ids.add(id);
+    localStorage.setItem(MY_SCORES_KEY, JSON.stringify(Array.from(ids)));
+  } catch {}
+}
 
 export function GameOver({
   hud,
