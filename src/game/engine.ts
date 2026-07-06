@@ -762,13 +762,16 @@ export class Game {
       ctx.beginPath();
       for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy + 6, r, 0, Math.PI * 2);
       ctx.fill();
-      // main body
+      // outline — slightly larger puffs filled in ink so only the outer rim remains
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r + 2, 0, Math.PI * 2);
+      ctx.fill();
+      // main body — normal puffs in white cover the ink interior
       ctx.fillStyle = "#ffffff";
-      ctx.strokeStyle = INK;
       ctx.beginPath();
       for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
       // highlight
       ctx.fillStyle = "rgba(255,255,255,0.9)";
       ctx.beginPath();
