@@ -792,22 +792,59 @@ export class Game {
     }
   }
 
-  private renderCloud(cx: number, cy: number, s: number, simple: boolean) {
+  private renderCloud(cx: number, cy: number, s: number, simple: boolean, shape: number) {
     const { ctx } = this;
-    const puffs: [number, number, number][] = simple
-      ? [
-          [-18 * s, 4 * s, 12 * s],
-          [0 * s, -6 * s, 14 * s],
-          [16 * s, 2 * s, 11 * s],
-        ]
-      : [
-          [-30 * s, 6 * s, 16 * s],
-          [-14 * s, -6 * s, 18 * s],
-          [4 * s, -12 * s, 20 * s],
-          [22 * s, -4 * s, 17 * s],
-          [36 * s, 8 * s, 14 * s],
-          [-4 * s, 10 * s, 15 * s],
-        ];
+    const puffSets: [number, number, number][][] = [
+      // 0: wide flat
+      [
+        [-36 * s, 4 * s, 14 * s],
+        [-14 * s, -2 * s, 16 * s],
+        [8 * s, 2 * s, 15 * s],
+        [28 * s, 6 * s, 12 * s],
+      ],
+      // 1: lumpy tall
+      [
+        [-20 * s, 8 * s, 13 * s],
+        [0 * s, -10 * s, 17 * s],
+        [18 * s, 4 * s, 14 * s],
+        [-6 * s, -22 * s, 11 * s],
+        [10 * s, -18 * s, 10 * s],
+      ],
+      // 2: small scattered
+      [
+        [-22 * s, -4 * s, 11 * s],
+        [-4 * s, -10 * s, 13 * s],
+        [16 * s, -2 * s, 10 * s],
+        [32 * s, -8 * s, 9 * s],
+        [8 * s, 6 * s, 9 * s],
+      ],
+      // 3: classic medium
+      [
+        [-26 * s, 6 * s, 15 * s],
+        [-8 * s, -8 * s, 17 * s],
+        [14 * s, -2 * s, 14 * s],
+        [30 * s, 8 * s, 12 * s],
+        [-2 * s, 10 * s, 13 * s],
+      ],
+      // 4: dense round
+      [
+        [-18 * s, 0 * s, 16 * s],
+        [0 * s, -12 * s, 18 * s],
+        [16 * s, 2 * s, 15 * s],
+        [-6 * s, 10 * s, 14 * s],
+        [10 * s, -6 * s, 14 * s],
+      ],
+      // 5: stretched
+      [
+        [-44 * s, 2 * s, 13 * s],
+        [-22 * s, -4 * s, 15 * s],
+        [0 * s, 0 * s, 16 * s],
+        [22 * s, -2 * s, 14 * s],
+        [42 * s, 4 * s, 12 * s],
+        [-10 * s, -12 * s, 10 * s],
+      ],
+    ];
+    const puffs = simple && shape > 2 ? puffSets[shape % 3] : puffSets[shape];
     // soft underside shadow
     ctx.fillStyle = "rgba(90,110,150,0.22)";
     ctx.beginPath();
@@ -826,8 +863,11 @@ export class Game {
     // highlight
     ctx.fillStyle = "rgba(255,255,255,0.9)";
     ctx.beginPath();
-    ctx.arc(cx - 10 * s, cy - 12 * s, 6 * s, 0, Math.PI * 2);
-    ctx.arc(cx + 6 * s, cy - 16 * s, 5 * s, 0, Math.PI * 2);
+    for (const [dx, dy, r] of puffs) {
+      if (r > 10 * s) {
+        ctx.arc(cx + dx - r * 0.3, cy + dy - r * 0.45, r * 0.3, 0, Math.PI * 2);
+      }
+    }
     ctx.fill();
   }
 
