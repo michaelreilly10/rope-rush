@@ -85,13 +85,16 @@ export function GameOver({
   const [showAd, setShowAd] = useState(false);
   const [adProgress, setAdProgress] = useState(0);
   const submit = useServerFn(submitScore);
+  const deleteScore = useServerFn(deleteScoreForContinue);
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (hud.canContinue) return; // wait until the run is truly final
+    // Submit provisionally on every game-over, including when the player has
+    // a continue option — if they don't watch the ad, the score stays. If
+    // they do continue, we delete this row before the ad resolves.
     if (!sessionToken) return;
     if (hasSubmittedToken(sessionToken)) {
       setStatus("done");
@@ -113,21 +116,36 @@ export function GameOver({
               } else {
                 setStatus("error");
                 setError(res.error);
+                unmarkTokenSubmitted(sessionToken);
               }
             })
             .catch((e) => {
               setStatus("error");
               setError(String((e as Error)?.message ?? e));
+              unmarkTokenSubmitted(sessionToken);
             });
         }
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hud.canContinue, sessionToken]);
+  }, [sessionToken]);
 
 
 
   const playAd = () => {
+    // As soon as the player commits to the ad, retract any provisional
+    // submission for this run so only the final score can ever be uploaded.
+    const idToRemove = submittedId;
+    const tokenAtStart = sessionToken;
+    if (idToRemove && tokenAtStart) {
+      removeMyScoreId(idToRemove);
+      deleteScore({ data: { id: idToRemove, token: tokenAtStart } }).catch(() => {});
+      setSubmittedId(null);
+    }
+    if (tokenAtStart) unmarkTokenSubmitted(tokenAtStart);
+    setStatus("idle");
+    setError(null);
+
     setShowAd(true);
     setAdProgress(0);
     const start = performance.now();
@@ -142,6 +160,8 @@ export function GameOver({
     };
     requestAnimationFrame(tick);
   };
+
+
 
   const doSubmit = async () => {
     const trimmed = name.trim();
