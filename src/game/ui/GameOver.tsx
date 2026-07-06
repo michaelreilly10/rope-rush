@@ -134,8 +134,13 @@ export function GameOver({
       setError("No active session");
       return;
     }
+    if (hasSubmittedToken(sessionToken)) {
+      setStatus("done");
+      return;
+    }
     setStatus("submitting");
     setError(null);
+    markTokenSubmitted(sessionToken);
     try {
       const res = await submit({ data: { name: trimmed, score: hud.score, token: sessionToken } });
       if (res.ok) {
@@ -152,6 +157,7 @@ export function GameOver({
       setError(String((e as Error)?.message ?? e));
     }
   };
+
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
