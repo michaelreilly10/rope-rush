@@ -727,7 +727,8 @@ export class Game {
 
   private initClouds() {
     const cloudSpacing = 220;
-    const cloudMargin = 120;
+    const speedRatio = this.speed / BASE_SPEED;
+    const cloudMargin = 120 * speedRatio;
     const H = this.H;
     const count = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
     this.clouds = [];
