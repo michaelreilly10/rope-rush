@@ -72,10 +72,15 @@ export function GameOver({
   const doSubmit = async () => {
     const trimmed = name.trim();
     if (!trimmed || hud.score < 1) return;
+    if (!sessionToken) {
+      setStatus("error");
+      setError("No active session");
+      return;
+    }
     setStatus("submitting");
     setError(null);
     try {
-      const res = await submit({ data: { name: trimmed, score: hud.score } });
+      const res = await submit({ data: { name: trimmed, score: hud.score, token: sessionToken } });
       if (res.ok) {
         try { localStorage.setItem(NAME_KEY, trimmed); } catch {}
         setSubmittedId(res.id);
