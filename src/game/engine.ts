@@ -337,15 +337,17 @@ export class Game {
     this.speed = Math.min(MAX_SPEED, this.speed + SPEED_ACCEL * eff);
     this.worldY += this.speed * eff;
 
-    // theme crossfade
+    // theme crossfade — seamlessly tied to descent (worldY)
     const themeBand = 800;
-    const wantTheme = Math.floor(this.worldY / themeBand) % THEMES.length;
+    const bandPos = this.worldY / themeBand;
+    const wantTheme = Math.floor(bandPos) % THEMES.length;
     if (wantTheme !== this.themeIndex) {
       this.prevThemeIndex = this.themeIndex;
       this.themeIndex = wantTheme;
-      this.themeT = 0;
     }
-    if (this.themeT < 1) this.themeT = Math.min(1, this.themeT + eff * 0.5);
+    // continuous progress within current band = crossfade amount
+    this.themeT = bandPos - Math.floor(bandPos);
+
 
     // ninja anim
     if (this.ninjaSpin > 0) this.ninjaSpin = Math.max(0, this.ninjaSpin - dt * 5);
