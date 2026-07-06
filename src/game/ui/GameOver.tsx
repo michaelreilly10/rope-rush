@@ -31,9 +31,9 @@ export function GameOver({
       const saved = localStorage.getItem(NAME_KEY);
       if (saved) {
         setName(saved);
-        if (hud.score >= 1 && status === "idle") {
+        if (hud.score >= 1 && status === "idle" && sessionToken) {
           setStatus("submitting");
-          submit({ data: { name: saved, score: hud.score } })
+          submit({ data: { name: saved, score: hud.score, token: sessionToken } })
             .then((res) => {
               if (res.ok) {
                 setSubmittedId(res.id);
