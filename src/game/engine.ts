@@ -665,55 +665,50 @@ export class Game {
     ctx.save();
     ctx.translate(ox, oy);
 
-    // bg gradient (deeper, richer)
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, this.themeMix("bg"));
-    bg.addColorStop(0.55, this.themeMix("bgFar"));
-    bg.addColorStop(1, this.themeMix("bgNear"));
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
+    // flat cartoon sky (two horizontal bands, no gradient)
+    ctx.fillStyle = this.themeMix("bg");
+    ctx.fillRect(0, 0, W, H * 0.55);
+    ctx.fillStyle = this.themeMix("bgFar");
+    ctx.fillRect(0, H * 0.55, W, H * 0.45);
+    // horizon line
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, H * 0.55);
+    ctx.lineTo(W, H * 0.55);
+    ctx.stroke();
 
     this.renderBackground();
 
-    // atmospheric fog band behind rope
-    const fog = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.75);
-    fog.addColorStop(0, "rgba(0,0,0,0)");
-    fog.addColorStop(0.5, this.rgba(this.themeMix("accent"), 0.06));
-    fog.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = fog;
-    ctx.fillRect(0, H * 0.35, W, H * 0.4);
-
     this.renderRope();
     this.renderObstacles();
+    this.renderCoins();
     this.renderParticles();
     this.renderNinja();
 
-    // speed lines at high speed (replaces flat gray veil)
+    // comic speed lines behind everything at high speed
     const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
-    if (this.phase === "playing" && speedPct > 0.35) {
-      const intensity = (speedPct - 0.35) / 0.65;
-      ctx.strokeStyle = `rgba(255,255,255,${intensity * 0.18})`;
-      ctx.lineWidth = 1;
+    if (this.phase === "playing" && speedPct > 0.3) {
+      const intensity = (speedPct - 0.3) / 0.7;
+      ctx.strokeStyle = INK;
+      ctx.globalAlpha = 0.35 + intensity * 0.35;
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
       const seed = (this.worldY * 40) | 0;
-      const lineCount = 6 + Math.floor(intensity * 8);
+      const lineCount = 4 + Math.floor(intensity * 6);
       for (let i = 0; i < lineCount; i++) {
         const s = ((seed + i * 977) % 1000) / 1000;
-        const lx = s * W;
+        const side = i % 2 === 0 ? 0.08 + s * 0.18 : 0.74 + s * 0.18;
+        const lx = side * W;
         const ly = ((seed * 0.7 + i * 613) % H) * 1;
-        const len = 30 + intensity * 60;
+        const len = 24 + intensity * 46;
         ctx.beginPath();
         ctx.moveTo(lx, ly);
         ctx.lineTo(lx, ly + len);
         ctx.stroke();
       }
+      ctx.globalAlpha = 1;
     }
-
-    // vignette
-    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
-    vg.addColorStop(0, "rgba(0,0,0,0)");
-    vg.addColorStop(1, "rgba(0,0,0,0.55)");
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, W, H);
 
     // hit flash
     if (this.hitFlash > 0) {
