@@ -27,6 +27,7 @@ export function GameOver({
   const [submittedId, setSubmittedId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (hud.canContinue) return; // wait until the run is truly final
     try {
       const saved = localStorage.getItem(NAME_KEY);
       if (saved) {
@@ -51,7 +52,8 @@ export function GameOver({
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hud.canContinue]);
+
 
   const playAd = () => {
     setShowAd(true);
@@ -125,7 +127,7 @@ export function GameOver({
             Best {hud.best}m {hud.score >= hud.best && hud.score > 0 && "· NEW RECORD"}
           </div>
 
-          {hud.score > 0 && status !== "done" && (
+          {hud.score > 0 && !hud.canContinue && status !== "done" && (
             <div className="mt-6 w-full max-w-xs">
               <label className="mb-1 block text-[10px] uppercase tracking-[0.3em] text-cyan-300/70">
                 Submit to Leaderboard
