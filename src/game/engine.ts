@@ -766,20 +766,16 @@ export class Game {
     const lantern = this.themeMix("lantern");
 
     // parallax puffy clouds — drift up from below the screen and exit off the top
-    const cloudSpacing = 220;
-    const cloudMargin = 120; // spawn/exit fully off-screen
-    const coff = ((-this.worldY * 6) % cloudSpacing + cloudSpacing) % cloudSpacing;
+    const cloudMargin = 120;
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
-    const rows = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
-    for (let i = -1; i < rows; i++) {
-      // start below the screen (H + margin) and move upward as coff shrinks
-      const cy = H + cloudMargin - i * cloudSpacing + coff;
+    // draw bottom clouds first so top clouds overlap correctly
+    const sortedClouds = this.clouds.slice().sort((a, b) => b.y - a.y);
+    for (const cloud of sortedClouds) {
+      const cy = cloud.y;
       if (cy < -cloudMargin || cy > H + cloudMargin) continue;
-      const seedA = ((i * 733) % 1000 + 1000) % 1000 / 1000;
-      const seedB = ((i * 311) % 1000 + 1000) % 1000 / 1000;
-      const cx = seedA * (W - 80) + 40;
-      const s = 0.85 + seedB * 0.6;
+      const cx = cloud.x;
+      const s = cloud.s;
 
       // fade in near bottom edge, fade out near top edge
       const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
