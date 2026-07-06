@@ -5,6 +5,7 @@ import { submitScore } from "@/lib/leaderboard.functions";
 
 const NAME_KEY = "rr.playerName";
 const MY_SCORES_KEY = "rr.myScores";
+const SUBMITTED_TOKENS_KEY = "rr.submittedTokens";
 
 function readMyScoreIds(): string[] {
   try {
@@ -24,6 +25,32 @@ function addMyScoreId(id: string) {
     localStorage.setItem(MY_SCORES_KEY, JSON.stringify(Array.from(ids)));
   } catch {}
 }
+
+function readSubmittedTokens(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SUBMITTED_TOKENS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function hasSubmittedToken(token: string): boolean {
+  return readSubmittedTokens().has(token);
+}
+
+function markTokenSubmitted(token: string) {
+  try {
+    const set = readSubmittedTokens();
+    set.add(token);
+    // Cap size to avoid unbounded growth.
+    const arr = Array.from(set).slice(-100);
+    localStorage.setItem(SUBMITTED_TOKENS_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
 
 export function GameOver({
   hud,
@@ -48,12 +75,18 @@ export function GameOver({
 
   useEffect(() => {
     if (hud.canContinue) return; // wait until the run is truly final
+    if (!sessionToken) return;
+    if (hasSubmittedToken(sessionToken)) {
+      setStatus("done");
+      return;
+    }
     try {
       const saved = localStorage.getItem(NAME_KEY);
       if (saved) {
         setName(saved);
-        if (hud.score >= 1 && status === "idle" && sessionToken) {
+        if (hud.score >= 1 && status === "idle") {
           setStatus("submitting");
+          markTokenSubmitted(sessionToken);
           submit({ data: { name: saved, score: hud.score, token: sessionToken } })
             .then((res) => {
               if (res.ok) {
@@ -73,7 +106,8 @@ export function GameOver({
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hud.canContinue]);
+  }, [hud.canContinue, sessionToken]);
+
 
 
   const playAd = () => {
@@ -100,8 +134,13 @@ export function GameOver({
       setError("No active session");
       return;
     }
+    if (hasSubmittedToken(sessionToken)) {
+      setStatus("done");
+      return;
+    }
     setStatus("submitting");
     setError(null);
+    markTokenSubmitted(sessionToken);
     try {
       const res = await submit({ data: { name: trimmed, score: hud.score, token: sessionToken } });
       if (res.ok) {
@@ -118,6 +157,7 @@ export function GameOver({
       setError(String((e as Error)?.message ?? e));
     }
   };
+
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
