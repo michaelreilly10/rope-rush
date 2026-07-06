@@ -902,7 +902,7 @@ export class Game {
         const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut))) * cfg.alpha;
         if (alpha <= 0.01) continue;
         ctx.globalAlpha = alpha;
-        this.renderCloud(cx, cy, s, cfg.simple);
+        this.renderCloud(cx, cy, s, cfg.simple, cloud.shape);
       }
     }
     ctx.globalAlpha = 1;
