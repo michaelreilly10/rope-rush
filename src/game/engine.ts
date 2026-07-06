@@ -121,6 +121,7 @@ export class Game {
   obstacles: Obstacle[] = [];
   coins: Coin[] = [];
   particles: Particle[] = [];
+  clouds: { y: number; x: number; s: number }[] = [];
 
   // timing
   private lastT = 0;
@@ -151,6 +152,7 @@ export class Game {
     if (!ctx) throw new Error("2D canvas unavailable");
     this.ctx = ctx;
     this.resize();
+    this.initClouds();
     audio.setSfx(this.save.settings.sfx);
     audio.setMusic(this.save.settings.music);
     this.start();
@@ -218,6 +220,7 @@ export class Game {
     this.themeIndex = 0;
     this.prevThemeIndex = 0;
     this.themeT = 1;
+    this.initClouds();
     this.canContinue = true;
     this.obstacles.forEach((o) => (o.active = false));
     this.coins.forEach((c) => (c.active = false));
@@ -347,6 +350,7 @@ export class Game {
     }
     // continuous progress within current band = crossfade amount
     this.themeT = bandPos - Math.floor(bandPos);
+    this.updateClouds(dt);
 
 
     // ninja anim
