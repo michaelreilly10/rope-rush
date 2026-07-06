@@ -802,14 +802,8 @@ export class Game {
       drawDisc(mx, my, 20, "#f4f0d0", true);
     }
   }
-    } else {
-      // moon arc during night
-      const t = cycleT - 2; // 0..1
-      const mx = 60 + t * (W - 120);
-      const my = horizonY + 30 - Math.sin(Math.PI * t) * (horizonY - 40);
-      drawDisc(mx, my, 20, "#f4f0d0", true);
-    }
-  }
+
+
 
 
   private renderRope() {
