@@ -121,6 +121,7 @@ export class Game {
   obstacles: Obstacle[] = [];
   coins: Coin[] = [];
   particles: Particle[] = [];
+  clouds: { y: number; x: number; s: number }[] = [];
 
   // timing
   private lastT = 0;
@@ -151,6 +152,7 @@ export class Game {
     if (!ctx) throw new Error("2D canvas unavailable");
     this.ctx = ctx;
     this.resize();
+    this.initClouds();
     audio.setSfx(this.save.settings.sfx);
     audio.setMusic(this.save.settings.music);
     this.start();
@@ -218,6 +220,7 @@ export class Game {
     this.themeIndex = 0;
     this.prevThemeIndex = 0;
     this.themeT = 1;
+    this.initClouds();
     this.canContinue = true;
     this.obstacles.forEach((o) => (o.active = false));
     this.coins.forEach((c) => (c.active = false));
@@ -347,6 +350,7 @@ export class Game {
     }
     // continuous progress within current band = crossfade amount
     this.themeT = bandPos - Math.floor(bandPos);
+    this.updateClouds(dt);
 
 
     // ninja anim
@@ -721,25 +725,57 @@ export class Game {
     ctx.restore();
   }
 
+  private initClouds() {
+    const cloudSpacing = 220;
+    const cloudMargin = 120;
+    const H = this.H;
+    const count = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
+    this.clouds = [];
+    for (let i = 0; i < count; i++) {
+      this.clouds.push({
+        y: H + cloudMargin - i * cloudSpacing,
+        x: 40 + Math.random() * (this.W - 80),
+        s: 0.85 + Math.random() * 0.6,
+      });
+    }
+  }
+
+  private updateClouds(dt: number) {
+    const cloudMargin = 120;
+    const cloudSpacing = 220;
+    const H = this.H;
+    const drift = this.speed * 6;
+
+    for (const c of this.clouds) {
+      c.y -= drift * dt;
+    }
+
+    let maxY = this.clouds.length > 0 ? Math.max(...this.clouds.map((c) => c.y)) : H + cloudMargin;
+    for (const c of this.clouds) {
+      if (c.y < -cloudMargin) {
+        c.y = maxY + cloudSpacing;
+        maxY = c.y;
+        c.x = 40 + Math.random() * (this.W - 80);
+        c.s = 0.85 + Math.random() * 0.6;
+      }
+    }
+  }
+
   private renderBackground() {
     const { ctx, W, H } = this;
     const lantern = this.themeMix("lantern");
 
     // parallax puffy clouds — drift up from below the screen and exit off the top
-    const cloudSpacing = 220;
-    const cloudMargin = 120; // spawn/exit fully off-screen
-    const coff = ((-this.worldY * 6) % cloudSpacing + cloudSpacing) % cloudSpacing;
+    const cloudMargin = 120;
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
-    const rows = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
-    for (let i = -1; i < rows; i++) {
-      // start below the screen (H + margin) and move upward as coff shrinks
-      const cy = H + cloudMargin - i * cloudSpacing + coff;
+    // draw bottom clouds first so top clouds overlap correctly
+    const sortedClouds = this.clouds.slice().sort((a, b) => b.y - a.y);
+    for (const cloud of sortedClouds) {
+      const cy = cloud.y;
       if (cy < -cloudMargin || cy > H + cloudMargin) continue;
-      const seedA = ((i * 733) % 1000 + 1000) % 1000 / 1000;
-      const seedB = ((i * 311) % 1000 + 1000) % 1000 / 1000;
-      const cx = seedA * (W - 80) + 40;
-      const s = 0.85 + seedB * 0.6;
+      const cx = cloud.x;
+      const s = cloud.s;
 
       // fade in near bottom edge, fade out near top edge
       const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
