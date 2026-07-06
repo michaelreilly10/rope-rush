@@ -35,7 +35,7 @@ export interface Particle {
 
 export type GamePhase = "menu" | "playing" | "paused" | "gameover" | "shop" | "settings";
 
-export type ThemeId = "rooftops" | "jungle" | "sunset";
+export type ThemeId = "day" | "sunset" | "night";
 
 export interface ThemePalette {
   id: ThemeId;
