@@ -1,3 +1,4 @@
+import { Trophy } from "lucide-react";
 import type { HUDState } from "../types";
 
 const heart = (filled: boolean, key: number) => (
@@ -41,14 +42,7 @@ export function HUD({
             className="grid h-10 w-10 place-items-center rounded-xl border border-cyan-300/20 bg-black/50 text-cyan-200 backdrop-blur-md active:scale-95"
             style={{ textShadow: "0 0 8px rgba(0,217,255,0.9)" }}
           >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M7 4h10v3a5 5 0 0 1-10 0V4z" />
-              <path d="M4 5h3v2a3 3 0 0 1-3-3z" />
-              <path d="M20 5h-3v2a3 3 0 0 0 3-3z" />
-              <path d="M9 14h6v2H9z" />
-              <path d="M8 20h8" />
-              <path d="M12 16v4" />
-            </svg>
+            <Trophy size={18} strokeWidth={2} />
           </button>
           <button
             onClick={onPause}
