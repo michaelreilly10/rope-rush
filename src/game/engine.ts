@@ -736,12 +736,13 @@ export class Game {
     const H = this.H;
     this.cloudLayers = configs.map((cfg) => {
       const count = Math.ceil((H + cloudMargin * 2) / cfg.spacing) + 2;
-      const arr: { y: number; x: number; s: number }[] = [];
+      const arr: { y: number; x: number; s: number; shape: number }[] = [];
       for (let i = 0; i < count; i++) {
         arr.push({
           y: H + cloudMargin - i * cfg.spacing,
           x: 40 + Math.random() * (this.W - 80),
           s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
+          shape: Math.floor(Math.random() * 6),
         });
       }
       return arr;
@@ -770,6 +771,7 @@ export class Game {
           y: maxY + cfg.spacing,
           x: 40 + Math.random() * (this.W - 80),
           s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
+          shape: Math.floor(Math.random() * 6),
         });
       }
 
@@ -784,6 +786,7 @@ export class Game {
           maxY = c.y;
           c.x = 40 + Math.random() * (this.W - 80);
           c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
+          c.shape = Math.floor(Math.random() * 6);
         }
       }
     }
