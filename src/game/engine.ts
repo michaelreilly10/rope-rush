@@ -729,71 +729,89 @@ export class Game {
 
   private renderBackground() {
     const { ctx, W, H } = this;
+    const bgNear = this.themeMix("bgNear");
     const beam = this.themeMix("beam");
-    const accent = this.themeMix("accent");
     const lantern = this.themeMix("lantern");
 
-    // Soft parallax side pillars (dark neon edge)
-    const leftG = ctx.createLinearGradient(0, 0, 60, 0);
-    leftG.addColorStop(0, "rgba(0,0,0,0.7)");
-    leftG.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = leftG;
-    ctx.fillRect(0, 0, 60, H);
-    const rightG = ctx.createLinearGradient(W - 60, 0, W, 0);
-    rightG.addColorStop(0, "rgba(0,0,0,0)");
-    rightG.addColorStop(1, "rgba(0,0,0,0.7)");
-    ctx.fillStyle = rightG;
-    ctx.fillRect(W - 60, 0, 60, H);
-
-    // Vertical cyber-grid columns (perspective towards center)
-    ctx.strokeStyle = this.rgba(beam, 0.55);
-    ctx.lineWidth = 1;
-    const cols = 6;
-    for (let i = 1; i <= cols; i++) {
-      const t = i / (cols + 1);
-      const lx = t * W;
-      const cx = W / 2;
-      // slight perspective converging toward vanishing point at horizon
+    // parallax clouds (upper sky) — big flat rounded blobs with black outlines
+    const cloudSpacing = 180;
+    const coff = ((-this.worldY * 6) % cloudSpacing + cloudSpacing) % cloudSpacing;
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 2.5;
+    for (let i = -1; i < 5; i++) {
+      const cy = -60 + i * cloudSpacing + coff;
+      if (cy > H * 0.55) continue;
+      const seedA = ((i * 733) % 1000) / 1000;
+      const cx = seedA * (W - 60) + 30;
+      const s = 0.85 + ((i * 311) % 100) / 250;
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = INK;
       ctx.beginPath();
-      ctx.moveTo(lx, 0);
-      ctx.lineTo(lx * 0.85 + cx * 0.15, H);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(W - lx, 0);
-      ctx.lineTo((W - lx) * 0.85 + cx * 0.15, H);
+      ctx.arc(cx, cy, 18 * s, 0, Math.PI * 2);
+      ctx.arc(cx + 20 * s, cy + 4, 14 * s, 0, Math.PI * 2);
+      ctx.arc(cx - 22 * s, cy + 6, 15 * s, 0, Math.PI * 2);
+      ctx.arc(cx + 4, cy - 8 * s, 12 * s, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
     }
 
-    // Horizontal scanlines scrolling upward
-    const spacing = 90;
-    const offset = ((-this.worldY * 28) % spacing + spacing) % spacing;
-    for (let y = -spacing + offset; y < H + spacing; y += spacing) {
-      const dist = Math.abs(y - H * 0.55) / H;
-      const a = Math.max(0.05, 0.4 - dist * 0.4);
-      ctx.strokeStyle = this.rgba(accent, a * 0.35);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
+    // distant flat skyline silhouette along the horizon
+    ctx.fillStyle = bgNear;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.5;
+    const skyH = H * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(0, skyH);
+    const step = 28;
+    const skyOff = ((this.worldY * 4) % step + step) % step;
+    let x = -skyOff;
+    let toggle = 0;
+    while (x < W + step) {
+      const h = 20 + (((x * 37) | 0) % 30);
+      ctx.lineTo(x, skyH - h);
+      ctx.lineTo(x + step * 0.5, skyH - h);
+      ctx.lineTo(x + step * 0.5, skyH - (h + (toggle % 2 === 0 ? 8 : -6)));
+      ctx.lineTo(x + step, skyH - (h + (toggle % 2 === 0 ? 8 : -6)));
+      x += step;
+      toggle++;
+    }
+    ctx.lineTo(W, skyH);
+    ctx.lineTo(W, H * 0.6);
+    ctx.lineTo(0, H * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // ground band beneath horizon: flat with dashed cartoon grass tufts
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    const gspacing = 44;
+    const goff = ((-this.worldY * 32) % gspacing + gspacing) % gspacing;
+    ctx.fillStyle = beam;
+    for (let y = H * 0.62; y < H; y += gspacing) {
+      const yy = y + goff;
+      // little tufts on both sides
+      for (let sx = 0; sx < 2; sx++) {
+        const tx = sx === 0 ? 20 : W - 20;
+        ctx.beginPath();
+        ctx.moveTo(tx - 6, yy + 4);
+        ctx.lineTo(tx, yy - 6);
+        ctx.lineTo(tx + 6, yy + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
     }
 
-    // Distant neon glyphs (subtle floating markers)
-    const glyphSpacing = 220;
-    const goff = ((-this.worldY * 22) % glyphSpacing + glyphSpacing) % glyphSpacing;
-    for (let y = -glyphSpacing + goff; y < H + glyphSpacing; y += glyphSpacing) {
-      ctx.fillStyle = this.rgba(lantern, 0.22);
-      ctx.fillRect(24, y, 3, 24);
-      ctx.fillRect(W - 27, y + 40, 3, 24);
-    }
-
-    // central vertical rail glow (behind rope)
-    const rail = ctx.createLinearGradient(W / 2 - 20, 0, W / 2 + 20, 0);
-    rail.addColorStop(0, "rgba(0,0,0,0)");
-    rail.addColorStop(0.5, this.rgba(accent, 0.08));
-    rail.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = rail;
-    ctx.fillRect(W / 2 - 20, 0, 40, H);
+    // small sun/moon disc top-right for extra cartoon warmth
+    ctx.fillStyle = lantern;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(W - 44, 60, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
 
 
