@@ -726,108 +726,141 @@ export class Game {
   }
 
   private initClouds() {
-    const cloudSpacing = 220;
+    const configs = [
+      { spacing: 360, minS: 0.45, maxS: 0.75, speedMult: 2.5 },
+      { spacing: 220, minS: 0.75, maxS: 1.05, speedMult: 5.5 },
+      { spacing: 150, minS: 1.1, maxS: 1.55, speedMult: 8.5 },
+    ];
     const speedRatio = this.speed / BASE_SPEED;
     const cloudMargin = 120 * speedRatio;
     const H = this.H;
-    const count = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
-    this.clouds = [];
-    for (let i = 0; i < count; i++) {
-      this.clouds.push({
-        y: H + cloudMargin - i * cloudSpacing,
-        x: 40 + Math.random() * (this.W - 80),
-        s: 0.85 + Math.random() * 0.6,
-      });
-    }
+    this.cloudLayers = configs.map((cfg) => {
+      const count = Math.ceil((H + cloudMargin * 2) / cfg.spacing) + 2;
+      const arr: { y: number; x: number; s: number }[] = [];
+      for (let i = 0; i < count; i++) {
+        arr.push({
+          y: H + cloudMargin - i * cfg.spacing,
+          x: 40 + Math.random() * (this.W - 80),
+          s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
+        });
+      }
+      return arr;
+    });
   }
 
   private updateClouds(dt: number) {
+    const configs = [
+      { spacing: 360, minS: 0.45, maxS: 0.75, speedMult: 2.5 },
+      { spacing: 220, minS: 0.75, maxS: 1.05, speedMult: 5.5 },
+      { spacing: 150, minS: 1.1, maxS: 1.55, speedMult: 8.5 },
+    ];
     const speedRatio = this.speed / BASE_SPEED;
     const cloudMargin = 120 * speedRatio;
-    const cloudSpacing = 220;
     const H = this.H;
-    const drift = this.speed * 6;
 
-    // grow the pool if the expanded zone needs more clouds
-    const needed = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
-    while (this.clouds.length < needed) {
-      const maxY = this.clouds.length > 0 ? Math.max(...this.clouds.map((c) => c.y)) : H + cloudMargin;
-      this.clouds.push({
-        y: maxY + cloudSpacing,
-        x: 40 + Math.random() * (this.W - 80),
-        s: 0.85 + Math.random() * 0.6,
-      });
-    }
+    for (let li = 0; li < 3; li++) {
+      const cfg = configs[li];
+      const drift = this.speed * cfg.speedMult;
+      const layer = this.cloudLayers[li];
 
-    for (const c of this.clouds) {
-      c.y -= drift * dt;
-    }
+      const needed = Math.ceil((H + cloudMargin * 2) / cfg.spacing) + 2;
+      while (layer.length < needed) {
+        const maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
+        layer.push({
+          y: maxY + cfg.spacing,
+          x: 40 + Math.random() * (this.W - 80),
+          s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
+        });
+      }
 
-    let maxY = this.clouds.length > 0 ? Math.max(...this.clouds.map((c) => c.y)) : H + cloudMargin;
-    for (const c of this.clouds) {
-      if (c.y < -cloudMargin) {
-        c.y = maxY + cloudSpacing;
-        maxY = c.y;
-        c.x = 40 + Math.random() * (this.W - 80);
-        c.s = 0.85 + Math.random() * 0.6;
+      for (const c of layer) {
+        c.y -= drift * dt;
+      }
+
+      let maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
+      for (const c of layer) {
+        if (c.y < -cloudMargin) {
+          c.y = maxY + cfg.spacing;
+          maxY = c.y;
+          c.x = 40 + Math.random() * (this.W - 80);
+          c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
+        }
       }
     }
+  }
+
+  private renderCloud(cx: number, cy: number, s: number, simple: boolean) {
+    const { ctx } = this;
+    const puffs: [number, number, number][] = simple
+      ? [
+          [-18 * s, 4 * s, 12 * s],
+          [0 * s, -6 * s, 14 * s],
+          [16 * s, 2 * s, 11 * s],
+        ]
+      : [
+          [-30 * s, 6 * s, 16 * s],
+          [-14 * s, -6 * s, 18 * s],
+          [4 * s, -12 * s, 20 * s],
+          [22 * s, -4 * s, 17 * s],
+          [36 * s, 8 * s, 14 * s],
+          [-4 * s, 10 * s, 15 * s],
+        ];
+    // soft underside shadow
+    ctx.fillStyle = "rgba(90,110,150,0.22)";
+    ctx.beginPath();
+    for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy + 6, r, 0, Math.PI * 2);
+    ctx.fill();
+    // outline
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r + 2, 0, Math.PI * 2);
+    ctx.fill();
+    // main body
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r, 0, Math.PI * 2);
+    ctx.fill();
+    // highlight
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.beginPath();
+    ctx.arc(cx - 10 * s, cy - 12 * s, 6 * s, 0, Math.PI * 2);
+    ctx.arc(cx + 6 * s, cy - 16 * s, 5 * s, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   private renderBackground() {
     const { ctx, W, H } = this;
     const lantern = this.themeMix("lantern");
 
-    // parallax puffy clouds — drift up from below the screen and exit off the top
     const speedRatio = this.speed / BASE_SPEED;
     const cloudMargin = 120 * speedRatio;
     ctx.lineJoin = "round";
     ctx.lineWidth = 3;
-    // draw bottom clouds first so top clouds overlap correctly
-    const sortedClouds = this.clouds.slice().sort((a, b) => b.y - a.y);
-    for (const cloud of sortedClouds) {
-      const cy = cloud.y;
-      if (cy < -cloudMargin || cy > H + cloudMargin) continue;
-      const cx = cloud.x;
-      const s = cloud.s;
 
-      // fade in near bottom edge, fade out near top edge
-      const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
-      const fadeOut = Math.min(1, (cy + cloudMargin) / cloudMargin);
-      const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut)));
-      if (alpha <= 0.01) continue;
-      ctx.globalAlpha = alpha;
+    const layerConfigs = [
+      { alpha: 0.42, simple: true },
+      { alpha: 0.78, simple: false },
+      { alpha: 1.0, simple: false },
+    ];
 
-      // build a puffy cloud silhouette from overlapping circles
-      const puffs: [number, number, number][] = [
-        [-30 * s, 6 * s, 16 * s],
-        [-14 * s, -6 * s, 18 * s],
-        [4 * s, -12 * s, 20 * s],
-        [22 * s, -4 * s, 17 * s],
-        [36 * s, 8 * s, 14 * s],
-        [-4 * s, 10 * s, 15 * s],
-      ];
-      // soft underside shadow
-      ctx.fillStyle = "rgba(90,110,150,0.22)";
-      ctx.beginPath();
-      for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy + 6, r, 0, Math.PI * 2);
-      ctx.fill();
-      // outline — slightly larger puffs filled in ink so only the outer rim remains
-      ctx.fillStyle = INK;
-      ctx.beginPath();
-      for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r + 2, 0, Math.PI * 2);
-      ctx.fill();
-      // main body — normal puffs in white cover the ink interior
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r, 0, Math.PI * 2);
-      ctx.fill();
-      // highlight
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.beginPath();
-      ctx.arc(cx - 10 * s, cy - 12 * s, 6 * s, 0, Math.PI * 2);
-      ctx.arc(cx + 6 * s, cy - 16 * s, 5 * s, 0, Math.PI * 2);
-      ctx.fill();
+    // far -> near for correct overlap
+    for (let li = 0; li < 3; li++) {
+      const layer = this.cloudLayers[li];
+      const cfg = layerConfigs[li];
+      const sorted = layer.slice().sort((a, b) => b.y - a.y);
+      for (const cloud of sorted) {
+        const cy = cloud.y;
+        if (cy < -cloudMargin || cy > H + cloudMargin) continue;
+        const cx = cloud.x;
+        const s = cloud.s;
+
+        const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
+        const fadeOut = Math.min(1, (cy + cloudMargin) / cloudMargin);
+        const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut))) * cfg.alpha;
+        if (alpha <= 0.01) continue;
+        ctx.globalAlpha = alpha;
+        this.renderCloud(cx, cy, s, cfg.simple);
+      }
     }
     ctx.globalAlpha = 1;
 
