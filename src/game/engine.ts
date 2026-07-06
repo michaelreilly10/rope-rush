@@ -725,28 +725,59 @@ export class Game {
     const { ctx, W, H } = this;
     const lantern = this.themeMix("lantern");
 
-    // parallax clouds spanning the full sky
-    const cloudSpacing = 180;
+    // parallax puffy clouds — drift up from below the screen and exit off the top
+    const cloudSpacing = 220;
+    const cloudMargin = 120; // spawn/exit fully off-screen
     const coff = ((-this.worldY * 6) % cloudSpacing + cloudSpacing) % cloudSpacing;
     ctx.lineJoin = "round";
-    ctx.lineWidth = 2.5;
-    for (let i = -1; i < 8; i++) {
-      const cy = -60 + i * cloudSpacing + coff;
-      if (cy < -60 || cy > H + 60) continue;
-      const seedA = ((i * 733) % 1000) / 1000;
-      const cx = seedA * (W - 60) + 30;
-      const s = 0.85 + ((i * 311) % 100) / 250;
+    ctx.lineWidth = 3;
+    const rows = Math.ceil((H + cloudMargin * 2) / cloudSpacing) + 2;
+    for (let i = -1; i < rows; i++) {
+      // start below the screen (H + margin) and move upward as coff shrinks
+      const cy = H + cloudMargin - i * cloudSpacing + coff;
+      if (cy < -cloudMargin || cy > H + cloudMargin) continue;
+      const seedA = ((i * 733) % 1000 + 1000) % 1000 / 1000;
+      const seedB = ((i * 311) % 1000 + 1000) % 1000 / 1000;
+      const cx = seedA * (W - 80) + 40;
+      const s = 0.85 + seedB * 0.6;
+
+      // fade in near bottom edge, fade out near top edge
+      const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
+      const fadeOut = Math.min(1, (cy + cloudMargin) / cloudMargin);
+      const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut)));
+      if (alpha <= 0.01) continue;
+      ctx.globalAlpha = alpha;
+
+      // build a puffy cloud silhouette from overlapping circles
+      const puffs: [number, number, number][] = [
+        [-30 * s, 6 * s, 16 * s],
+        [-14 * s, -6 * s, 18 * s],
+        [4 * s, -12 * s, 20 * s],
+        [22 * s, -4 * s, 17 * s],
+        [36 * s, 8 * s, 14 * s],
+        [-4 * s, 10 * s, 15 * s],
+      ];
+      // soft underside shadow
+      ctx.fillStyle = "rgba(90,110,150,0.22)";
+      ctx.beginPath();
+      for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy + 6, r, 0, Math.PI * 2);
+      ctx.fill();
+      // main body
       ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = INK;
       ctx.beginPath();
-      ctx.arc(cx, cy, 18 * s, 0, Math.PI * 2);
-      ctx.arc(cx + 20 * s, cy + 4, 14 * s, 0, Math.PI * 2);
-      ctx.arc(cx - 22 * s, cy + 6, 15 * s, 0, Math.PI * 2);
-      ctx.arc(cx + 4, cy - 8 * s, 12 * s, 0, Math.PI * 2);
-      ctx.closePath();
+      for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      // highlight
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.beginPath();
+      ctx.arc(cx - 10 * s, cy - 12 * s, 6 * s, 0, Math.PI * 2);
+      ctx.arc(cx + 6 * s, cy - 16 * s, 5 * s, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.globalAlpha = 1;
+
 
     // time-of-day: cycleT goes 0 (day) -> 1 (sunset) -> 2 (night) -> 3 (loop)
     const cycleT = this.themeIndex + this.themeT;
