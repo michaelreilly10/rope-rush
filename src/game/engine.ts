@@ -816,46 +816,65 @@ export class Game {
 
 
   private renderRope() {
-    const { ctx, W, H } = this;
+    const { ctx, H } = this;
     const rope = findRope(this.save.equipped.rope);
-    const x = W / 2;
+    const x = this.W / 2;
     const color = rope.color;
 
-    // outer glow
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = rope.glow || this.rgba(this.themeMix("accent"), 0.6);
-
-    // main rope with vertical gradient (highlight in middle)
-    const rg = ctx.createLinearGradient(x - 5, 0, x + 5, 0);
-    rg.addColorStop(0, "rgba(0,0,0,0.55)");
-    rg.addColorStop(0.5, color);
-    rg.addColorStop(1, "rgba(0,0,0,0.55)");
-    ctx.strokeStyle = rg;
-    ctx.lineWidth = rope.style === "chain" ? 6 : 7;
+    // thick black outline stroke behind the rope
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 12;
     ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, H);
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
-    // subtle inner highlight line
-    ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 1;
+    // flat colored rope stroke
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.moveTo(x - 1.5, 0);
-    ctx.lineTo(x - 1.5, H);
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
     ctx.stroke();
 
-    // braid hatching
-    if (rope.style === "rope" || rope.style === "vine") {
-      ctx.strokeStyle = "rgba(0,0,0,0.4)";
-      ctx.lineWidth = 1;
-      const off = ((-this.worldY * 50) % 10 + 10) % 10;
-      for (let y = -10 + off; y < H; y += 10) {
+    // style-specific inked details
+    const off = ((-this.worldY * 60) % 18 + 18) % 18;
+    if (rope.style === "chain") {
+      // stacked pill links, outlined
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      for (let y = -18 + off; y < H; y += 18) {
+        ctx.fillStyle = color;
+        this.roundedRect(x - 5, y, 10, 14, 5);
+        ctx.fill();
+        ctx.stroke();
+      }
+    } else if (rope.style === "vine") {
+      // little leaves alternating sides
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      let flip = 0;
+      for (let y = -14 + off; y < H; y += 22) {
+        const s = flip % 2 === 0 ? 1 : -1;
+        ctx.fillStyle = "#7bc450";
         ctx.beginPath();
-        ctx.moveTo(x - 3, y);
-        ctx.lineTo(x + 3, y + 5);
+        ctx.moveTo(x, y);
+        ctx.quadraticCurveTo(x + s * 14, y - 4, x + s * 16, y + 6);
+        ctx.quadraticCurveTo(x + s * 8, y + 8, x, y + 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        flip++;
+      }
+    } else {
+      // rope / neon: black tick marks for braid feel
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      for (let y = -10 + off; y < H; y += 12) {
+        ctx.beginPath();
+        ctx.moveTo(x - 4, y);
+        ctx.lineTo(x + 4, y + 6);
         ctx.stroke();
       }
     }
