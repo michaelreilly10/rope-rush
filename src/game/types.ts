@@ -35,7 +35,7 @@ export interface Particle {
 
 export type GamePhase = "menu" | "playing" | "paused" | "gameover" | "shop" | "settings";
 
-export type ThemeId = "grid" | "hive" | "circuit";
+export type ThemeId = "rooftops" | "jungle" | "sunset";
 
 export interface ThemePalette {
   id: ThemeId;
