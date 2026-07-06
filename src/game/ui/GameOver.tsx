@@ -7,11 +7,13 @@ const NAME_KEY = "rr.playerName";
 
 export function GameOver({
   hud,
+  sessionToken,
   onContinue,
   onRetry,
   onLeaderboard,
 }: {
   hud: HUDState;
+  sessionToken: string | null;
   onContinue: () => void;
   onRetry: () => void;
   onLeaderboard: (highlightId?: string) => void;
@@ -29,9 +31,9 @@ export function GameOver({
       const saved = localStorage.getItem(NAME_KEY);
       if (saved) {
         setName(saved);
-        if (hud.score >= 1 && status === "idle") {
+        if (hud.score >= 1 && status === "idle" && sessionToken) {
           setStatus("submitting");
-          submit({ data: { name: saved, score: hud.score } })
+          submit({ data: { name: saved, score: hud.score, token: sessionToken } })
             .then((res) => {
               if (res.ok) {
                 setSubmittedId(res.id);
@@ -70,10 +72,15 @@ export function GameOver({
   const doSubmit = async () => {
     const trimmed = name.trim();
     if (!trimmed || hud.score < 1) return;
+    if (!sessionToken) {
+      setStatus("error");
+      setError("No active session");
+      return;
+    }
     setStatus("submitting");
     setError(null);
     try {
-      const res = await submit({ data: { name: trimmed, score: hud.score } });
+      const res = await submit({ data: { name: trimmed, score: hud.score, token: sessionToken } });
       if (res.ok) {
         try { localStorage.setItem(NAME_KEY, trimmed); } catch {}
         setSubmittedId(res.id);
