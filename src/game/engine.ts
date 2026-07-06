@@ -665,18 +665,10 @@ export class Game {
     ctx.save();
     ctx.translate(ox, oy);
 
-    // flat cartoon sky (two horizontal bands, no gradient)
+    // flat cartoon sky — single full-height band
     ctx.fillStyle = this.themeMix("bg");
-    ctx.fillRect(0, 0, W, H * 0.55);
-    ctx.fillStyle = this.themeMix("bgFar");
-    ctx.fillRect(0, H * 0.55, W, H * 0.45);
-    // horizon line
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, H * 0.55);
-    ctx.lineTo(W, H * 0.55);
-    ctx.stroke();
+    ctx.fillRect(0, 0, W, H);
+
 
     this.renderBackground();
 
@@ -729,18 +721,16 @@ export class Game {
 
   private renderBackground() {
     const { ctx, W, H } = this;
-    const bgNear = this.themeMix("bgNear");
-    const beam = this.themeMix("beam");
     const lantern = this.themeMix("lantern");
 
-    // parallax clouds (upper sky) — big flat rounded blobs with black outlines
+    // parallax clouds spanning the full sky
     const cloudSpacing = 180;
     const coff = ((-this.worldY * 6) % cloudSpacing + cloudSpacing) % cloudSpacing;
     ctx.lineJoin = "round";
     ctx.lineWidth = 2.5;
-    for (let i = -1; i < 5; i++) {
+    for (let i = -1; i < 8; i++) {
       const cy = -60 + i * cloudSpacing + coff;
-      if (cy > H * 0.55) continue;
+      if (cy < -60 || cy > H + 60) continue;
       const seedA = ((i * 733) % 1000) / 1000;
       const cx = seedA * (W - 60) + 30;
       const s = 0.85 + ((i * 311) % 100) / 250;
@@ -756,59 +746,10 @@ export class Game {
       ctx.stroke();
     }
 
-    // distant flat skyline silhouette along the horizon
-    ctx.fillStyle = bgNear;
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2.5;
-    const skyH = H * 0.55;
-    ctx.beginPath();
-    ctx.moveTo(0, skyH);
-    const step = 28;
-    const skyOff = ((this.worldY * 4) % step + step) % step;
-    let x = -skyOff;
-    let toggle = 0;
-    while (x < W + step) {
-      const h = 20 + (((x * 37) | 0) % 30);
-      ctx.lineTo(x, skyH - h);
-      ctx.lineTo(x + step * 0.5, skyH - h);
-      ctx.lineTo(x + step * 0.5, skyH - (h + (toggle % 2 === 0 ? 8 : -6)));
-      ctx.lineTo(x + step, skyH - (h + (toggle % 2 === 0 ? 8 : -6)));
-      x += step;
-      toggle++;
-    }
-    ctx.lineTo(W, skyH);
-    ctx.lineTo(W, H * 0.6);
-    ctx.lineTo(0, H * 0.6);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // ground band beneath horizon: flat with dashed cartoon grass tufts
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
-    const gspacing = 44;
-    const goff = ((-this.worldY * 32) % gspacing + gspacing) % gspacing;
-    ctx.fillStyle = beam;
-    for (let y = H * 0.62; y < H; y += gspacing) {
-      const yy = y + goff;
-      // little tufts on both sides
-      for (let sx = 0; sx < 2; sx++) {
-        const tx = sx === 0 ? 20 : W - 20;
-        ctx.beginPath();
-        ctx.moveTo(tx - 6, yy + 4);
-        ctx.lineTo(tx, yy - 6);
-        ctx.lineTo(tx + 6, yy + 4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
-    }
-
-    // time-of-day: cycleT goes 0 (dawn/day) -> 1 (sunset) -> 2 (night) -> 3 (loop)
+    // time-of-day: cycleT goes 0 (day) -> 1 (sunset) -> 2 (night) -> 3 (loop)
     const cycleT = this.themeIndex + this.themeT;
-    const horizonY = H * 0.55;
 
-    // stars at night — fade in from sunset->night, fade out at end of night
+    // stars at night — across the whole sky
     const nightAmt = cycleT < 1
       ? 0
       : cycleT < 2
@@ -819,9 +760,9 @@ export class Game {
     if (nightAmt > 0.05) {
       ctx.fillStyle = `rgba(255,255,240,${nightAmt})`;
       const starSeed = 1337;
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 60; i++) {
         const sx = ((i * 733 + starSeed) % 1000) / 1000 * W;
-        const sy = ((i * 991 + starSeed) % 1000) / 1000 * (horizonY - 20);
+        const sy = ((i * 991 + starSeed) % 1000) / 1000 * H;
         const twinkle = 0.6 + 0.4 * Math.sin(performance.now() / 400 + i);
         ctx.globalAlpha = nightAmt * twinkle;
         const r = i % 5 === 0 ? 1.6 : 1;
@@ -832,7 +773,7 @@ export class Game {
       ctx.globalAlpha = 1;
     }
 
-    // sun visible during day + sunset (cycleT 0..2), moon during night (2..3)
+    // sun (day+sunset) / moon (night) arcs across the full screen
     const drawDisc = (cx: number, cy: number, r: number, fill: string, isMoon: boolean) => {
       ctx.fillStyle = fill;
       ctx.strokeStyle = INK;
@@ -842,7 +783,6 @@ export class Game {
       ctx.fill();
       ctx.stroke();
       if (isMoon) {
-        // crescent shadow
         ctx.fillStyle = this.themeMix("bg");
         ctx.beginPath();
         ctx.arc(cx + r * 0.45, cy - r * 0.15, r * 0.85, 0, Math.PI * 2);
@@ -851,19 +791,19 @@ export class Game {
     };
 
     if (cycleT < 2) {
-      // sun arc across day + sunset
       const t = cycleT / 2; // 0..1
       const sx = 60 + t * (W - 120);
-      const sy = horizonY + 30 - Math.sin(Math.PI * t) * (horizonY - 40);
+      const sy = H + 40 - Math.sin(Math.PI * t) * (H - 40);
       drawDisc(sx, sy, 24, lantern, false);
     } else {
-      // moon arc during night
       const t = cycleT - 2; // 0..1
       const mx = 60 + t * (W - 120);
-      const my = horizonY + 30 - Math.sin(Math.PI * t) * (horizonY - 40);
+      const my = H + 40 - Math.sin(Math.PI * t) * (H - 40);
       drawDisc(mx, my, 20, "#f4f0d0", true);
     }
   }
+
+
 
 
   private renderRope() {
