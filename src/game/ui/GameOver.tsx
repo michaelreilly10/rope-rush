@@ -52,6 +52,22 @@ function markTokenSubmitted(token: string) {
   } catch {}
 }
 
+function unmarkTokenSubmitted(token: string) {
+  try {
+    const set = readSubmittedTokens();
+    set.delete(token);
+    localStorage.setItem(SUBMITTED_TOKENS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+function removeMyScoreId(id: string) {
+  try {
+    const ids = readMyScoreIds().filter((x) => x !== id);
+    localStorage.setItem(MY_SCORES_KEY, JSON.stringify(ids));
+  } catch {}
+}
+
+
 
 export function GameOver({
   hud,
