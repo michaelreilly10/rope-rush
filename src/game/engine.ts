@@ -1102,20 +1102,31 @@ export class Game {
     const prev = THEMES[this.prevThemeIndex];
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars — crossfade night intensity between themes
+    // stars — crossfade night intensity between themes; scroll with worldY
+    // across parallax layers to sell the falling look (especially in void)
     const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
-      ctx.fillStyle = `rgba(255,255,240,${nightAmt})`;
       const starSeed = 1337;
-      for (let i = 0; i < 60; i++) {
-        const sx = ((i * 733 + starSeed) % 1000) / 1000 * W;
-        const sy = ((i * 991 + starSeed) % 1000) / 1000 * H;
-        const twinkle = 0.6 + 0.4 * Math.sin(performance.now() / 400 + i);
-        ctx.globalAlpha = nightAmt * twinkle;
-        const r = i % 5 === 0 ? 1.6 : 1;
-        ctx.beginPath();
-        ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.fill();
+      const starLayers = [
+        { count: 40, speed: 18, size: 1.0 },
+        { count: 40, speed: 42, size: 1.2 },
+        { count: 25, speed: 90, size: 1.7 },
+      ];
+      const now = performance.now();
+      const spanH = H + 40;
+      let idx = 0;
+      for (const sl of starLayers) {
+        for (let i = 0; i < sl.count; i++, idx++) {
+          const sx = ((idx * 733 + starSeed) % 1000) / 1000 * W;
+          const baseY = ((idx * 991 + starSeed) % 1000) / 1000 * spanH;
+          const sy = ((baseY + this.worldY * sl.speed) % spanH + spanH) % spanH - 20;
+          const twinkle = 0.6 + 0.4 * Math.sin(now / 400 + idx);
+          ctx.globalAlpha = nightAmt * twinkle;
+          ctx.fillStyle = `rgb(255,255,240)`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, sl.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.globalAlpha = 1;
     }
