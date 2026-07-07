@@ -259,6 +259,8 @@ export class Game {
   themeIndex = 0;
   themeT = 0; // crossfade 0..1
   prevThemeIndex = 0;
+  private themeBandIndex = 0; // last consumed band integer
+  private themeQueue: number[] = []; // shuffled exotic-theme indices
   canContinue = true; // one ad continue per run
 
   // pools
