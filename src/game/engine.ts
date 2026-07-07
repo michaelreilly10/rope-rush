@@ -488,16 +488,18 @@ export class Game {
     this.speed = Math.min(MAX_SPEED, this.speed + SPEED_ACCEL * eff);
     this.worldY += this.speed * eff;
 
-    // theme crossfade — faster day/sunset/night cycles while always fading
+    // theme crossfade — day -> sunset -> night -> void, then non-repeating
+    // exotic palettes so the background never repeats in a run.
     const themeBand = 300;
     const bandPos = this.worldY / themeBand;
-    const wantTheme = Math.floor(bandPos) % THEMES.length;
-    if (wantTheme !== this.themeIndex) {
+    const bandInt = Math.floor(bandPos);
+    if (bandInt !== this.themeBandIndex) {
+      this.themeBandIndex = bandInt;
       this.prevThemeIndex = this.themeIndex;
-      this.themeIndex = wantTheme;
+      this.themeIndex = this.pickNextTheme(bandInt);
     }
     // continuous progress within current band = crossfade amount
-    this.themeT = bandPos - Math.floor(bandPos);
+    this.themeT = bandPos - bandInt;
     this.updateClouds(dt);
 
 
