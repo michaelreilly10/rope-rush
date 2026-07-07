@@ -340,8 +340,8 @@ export class Game {
     this.speed = Math.min(MAX_SPEED, this.speed + SPEED_ACCEL * eff);
     this.worldY += this.speed * eff;
 
-    // theme crossfade — seamlessly tied to descent (worldY)
-    const themeBand = 800;
+    // theme crossfade — faster day/sunset/night cycles while always fading
+    const themeBand = 300;
     const bandPos = this.worldY / themeBand;
     const wantTheme = Math.floor(bandPos) % THEMES.length;
     if (wantTheme !== this.themeIndex) {
