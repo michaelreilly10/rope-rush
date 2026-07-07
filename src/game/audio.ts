@@ -19,6 +19,11 @@ class AudioEngine {
   private musicNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
   private musicStarted = false;
   private duckUntil = 0;
+  private ambientGain: GainNode | null = null;
+  private ambientNoise: AudioBufferSourceNode | null = null;
+  private ambientFilter: BiquadFilterNode | null = null;
+  private ambientOscs: OscillatorNode[] = [];
+  private ambientStarted = false;
   public sfxOn = true;
   public musicOn = true;
 
