@@ -366,6 +366,8 @@ export class Game {
     this.themeIndex = 0;
     this.prevThemeIndex = 0;
     this.themeT = 1;
+    this.themeBandIndex = 0;
+    this.themeQueue = [];
     this.initClouds();
     this.canContinue = true;
     this.obstacles.forEach((o) => (o.active = false));
