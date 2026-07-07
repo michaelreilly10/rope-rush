@@ -932,34 +932,50 @@ export class Game {
     const cloudMargin = 120 * speedRatio;
     const H = this.H;
 
+    // suppress cloud presence while inside/entering the void theme
+    const voidCur = THEMES[this.themeIndex].id === "void" ? 1 : 0;
+    const voidPrev = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
+    const voidAmt = voidPrev * (1 - this.themeT) + voidCur * this.themeT;
+    const suppressSpawn = voidAmt > 0.4;
+
     for (let li = 0; li < 3; li++) {
       const cfg = configs[li];
       const drift = this.speed * cfg.speedMult;
       const layer = this.cloudLayers[li];
 
       const needed = Math.ceil((H + cloudMargin * 2) / cfg.spacing) + 2;
-      while (layer.length < needed) {
-        const maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
-        layer.push({
-          y: maxY + cfg.spacing,
-          x: 40 + Math.random() * (this.W - 80),
-          s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
-          shape: Math.floor(Math.random() * 6),
-        });
+      if (!suppressSpawn) {
+        while (layer.length < needed) {
+          const maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
+          layer.push({
+            y: maxY + cfg.spacing,
+            x: 40 + Math.random() * (this.W - 80),
+            s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
+            shape: Math.floor(Math.random() * 6),
+          });
+        }
       }
 
       for (const c of layer) {
         c.y -= drift * dt;
       }
 
-      let maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
-      for (const c of layer) {
-        if (c.y < -cloudMargin) {
-          c.y = maxY + cfg.spacing;
-          maxY = c.y;
-          c.x = 40 + Math.random() * (this.W - 80);
-          c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
-          c.shape = Math.floor(Math.random() * 6);
+      // recycle off-screen clouds only when not suppressed; otherwise let them drain
+      if (!suppressSpawn) {
+        let maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
+        for (const c of layer) {
+          if (c.y < -cloudMargin) {
+            c.y = maxY + cfg.spacing;
+            maxY = c.y;
+            c.x = 40 + Math.random() * (this.W - 80);
+            c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
+            c.shape = Math.floor(Math.random() * 6);
+          }
+        }
+      } else {
+        // drop clouds that have fully scrolled past so they don't linger
+        for (let i = layer.length - 1; i >= 0; i--) {
+          if (layer[i].y < -cloudMargin) layer.splice(i, 1);
         }
       }
     }
@@ -1059,6 +1075,12 @@ export class Game {
       { alpha: 1.0, simple: false },
     ];
 
+    // fade clouds out while the void theme is active
+    const voidCurAmt = THEMES[this.themeIndex].id === "void" ? 1 : 0;
+    const voidPrevAmt = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
+    const voidAmt = voidPrevAmt * (1 - this.themeT) + voidCurAmt * this.themeT;
+    const cloudVis = 1 - voidAmt;
+
     // far -> near for correct overlap
     for (let li = 0; li < 3; li++) {
       const layer = this.cloudLayers[li];
@@ -1072,7 +1094,7 @@ export class Game {
 
         const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
         const fadeOut = Math.min(1, (cy + cloudMargin) / cloudMargin);
-        const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut))) * cfg.alpha;
+        const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut))) * cfg.alpha * cloudVis;
         if (alpha <= 0.01) continue;
         ctx.globalAlpha = alpha;
         this.renderCloud(cx, cy, s, cfg.simple, cloud.shape);
@@ -1086,20 +1108,31 @@ export class Game {
     const prev = THEMES[this.prevThemeIndex];
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars — crossfade night intensity between themes
+    // stars — crossfade night intensity between themes; scroll with worldY
+    // across parallax layers to sell the falling look (especially in void)
     const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
-      ctx.fillStyle = `rgba(255,255,240,${nightAmt})`;
       const starSeed = 1337;
-      for (let i = 0; i < 60; i++) {
-        const sx = ((i * 733 + starSeed) % 1000) / 1000 * W;
-        const sy = ((i * 991 + starSeed) % 1000) / 1000 * H;
-        const twinkle = 0.6 + 0.4 * Math.sin(performance.now() / 400 + i);
-        ctx.globalAlpha = nightAmt * twinkle;
-        const r = i % 5 === 0 ? 1.6 : 1;
-        ctx.beginPath();
-        ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.fill();
+      const starLayers = [
+        { count: 40, speed: 18, size: 1.0 },
+        { count: 40, speed: 42, size: 1.2 },
+        { count: 25, speed: 90, size: 1.7 },
+      ];
+      const now = performance.now();
+      const spanH = H + 40;
+      let idx = 0;
+      for (const sl of starLayers) {
+        for (let i = 0; i < sl.count; i++, idx++) {
+          const sx = ((idx * 733 + starSeed) % 1000) / 1000 * W;
+          const baseY = ((idx * 991 + starSeed) % 1000) / 1000 * spanH;
+          const sy = ((baseY + this.worldY * sl.speed) % spanH + spanH) % spanH - 20;
+          const twinkle = 0.6 + 0.4 * Math.sin(now / 400 + idx);
+          ctx.globalAlpha = nightAmt * twinkle;
+          ctx.fillStyle = `rgb(255,255,240)`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, sl.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.globalAlpha = 1;
     }
