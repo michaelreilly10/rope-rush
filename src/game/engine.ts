@@ -25,6 +25,9 @@ const SPEED_ACCEL = 0.18; // per second
 
 const INK = "#0d0a08";
 
+// First 3 are the fixed intro cycle: day -> sunset -> night.
+// Index 3 is the "black" bridge. Everything from index 4 onward is an
+// exotic color palette shuffled through without repeats during a run.
 const THEMES: ThemePalette[] = [
   {
     id: "day",
@@ -35,6 +38,8 @@ const THEMES: ThemePalette[] = [
     beam: "#3f7a24",
     accent: "#ff5d3a",
     lantern: "#ffd23f",
+    celestial: "sun",
+    night: 0,
   },
   {
     id: "sunset",
@@ -45,6 +50,8 @@ const THEMES: ThemePalette[] = [
     beam: "#3a1226",
     accent: "#ff4a6a",
     lantern: "#ffd06a",
+    celestial: "sun",
+    night: 0.15,
   },
   {
     id: "night",
@@ -55,8 +62,145 @@ const THEMES: ThemePalette[] = [
     beam: "#08120a",
     accent: "#6b8afe",
     lantern: "#f4f0d0",
+    celestial: "moon",
+    night: 1,
+  },
+  {
+    id: "void",
+    name: "Void",
+    bg: "#050507",
+    bgFar: "#020204",
+    bgNear: "#08080c",
+    beam: "#000000",
+    accent: "#4a4a66",
+    lantern: "#cfcfe0",
+    celestial: "none",
+    night: 0.85,
+  },
+  {
+    id: "amethyst",
+    name: "Amethyst",
+    bg: "#4a1f7a",
+    bgFar: "#2a1050",
+    bgNear: "#1a0838",
+    beam: "#12042a",
+    accent: "#ff7ad9",
+    lantern: "#e9b8ff",
+    celestial: "moon",
+    night: 0.7,
+  },
+  {
+    id: "cobalt",
+    name: "Cobalt",
+    bg: "#1f3fa8",
+    bgFar: "#0f2270",
+    bgNear: "#08154a",
+    beam: "#020a2a",
+    accent: "#5ed0ff",
+    lantern: "#b8dcff",
+    celestial: "moon",
+    night: 0.5,
+  },
+  {
+    id: "crimson",
+    name: "Crimson",
+    bg: "#9a1a2c",
+    bgFar: "#5a0810",
+    bgNear: "#2a0208",
+    beam: "#160204",
+    accent: "#ffb45e",
+    lantern: "#ffd6a8",
+    celestial: "sun",
+    night: 0.35,
+  },
+  {
+    id: "teal",
+    name: "Abyss Teal",
+    bg: "#0f5a5e",
+    bgFar: "#053032",
+    bgNear: "#02181a",
+    beam: "#010c0e",
+    accent: "#5effd0",
+    lantern: "#b8fff0",
+    celestial: "moon",
+    night: 0.55,
+  },
+  {
+    id: "magenta",
+    name: "Neon Magenta",
+    bg: "#a0148c",
+    bgFar: "#600a58",
+    bgNear: "#2a0428",
+    beam: "#14001a",
+    accent: "#5ef0ff",
+    lantern: "#ffb8f0",
+    celestial: "none",
+    night: 0.6,
+  },
+  {
+    id: "emerald",
+    name: "Emerald",
+    bg: "#0f6a3a",
+    bgFar: "#053a1e",
+    bgNear: "#021a0c",
+    beam: "#010c06",
+    accent: "#ffe45e",
+    lantern: "#c8ffb8",
+    celestial: "moon",
+    night: 0.4,
+  },
+  {
+    id: "amber",
+    name: "Amber",
+    bg: "#c47a12",
+    bgFar: "#7a4408",
+    bgNear: "#3a1e02",
+    beam: "#180c00",
+    accent: "#ff3a5e",
+    lantern: "#ffe0a0",
+    celestial: "sun",
+    night: 0.1,
+  },
+  {
+    id: "ice",
+    name: "Ice",
+    bg: "#7ec8e3",
+    bgFar: "#c8ecf5",
+    bgNear: "#e8f6fb",
+    beam: "#4a7a90",
+    accent: "#5e6aff",
+    lantern: "#ffffff",
+    celestial: "sun",
+    night: 0,
+  },
+  {
+    id: "indigo",
+    name: "Indigo Cosmos",
+    bg: "#1a1050",
+    bgFar: "#0a0630",
+    bgNear: "#050218",
+    beam: "#020110",
+    accent: "#ff5eb8",
+    lantern: "#c8b8ff",
+    celestial: "moon",
+    night: 0.95,
+  },
+  {
+    id: "rose",
+    name: "Rose Dawn",
+    bg: "#ff8fa8",
+    bgFar: "#ffc8c0",
+    bgNear: "#ff5e8a",
+    beam: "#7a1a3a",
+    accent: "#5efff0",
+    lantern: "#fff0d0",
+    celestial: "sun",
+    night: 0.05,
   },
 ];
+
+const FIXED_INTRO_COUNT = 4; // day, sunset, night, void
+
 
 function resetPct(score: number) {
   if (score < 200) return 0.3;
@@ -115,6 +259,8 @@ export class Game {
   themeIndex = 0;
   themeT = 0; // crossfade 0..1
   prevThemeIndex = 0;
+  private themeBandIndex = 0; // last consumed band integer
+  private themeQueue: number[] = []; // shuffled exotic-theme indices
   canContinue = true; // one ad continue per run
 
   // pools
@@ -220,6 +366,8 @@ export class Game {
     this.themeIndex = 0;
     this.prevThemeIndex = 0;
     this.themeT = 1;
+    this.themeBandIndex = 0;
+    this.themeQueue = [];
     this.initClouds();
     this.canContinue = true;
     this.obstacles.forEach((o) => (o.active = false));
@@ -340,16 +488,18 @@ export class Game {
     this.speed = Math.min(MAX_SPEED, this.speed + SPEED_ACCEL * eff);
     this.worldY += this.speed * eff;
 
-    // theme crossfade — faster day/sunset/night cycles while always fading
+    // theme crossfade — day -> sunset -> night -> void, then non-repeating
+    // exotic palettes so the background never repeats in a run.
     const themeBand = 300;
     const bandPos = this.worldY / themeBand;
-    const wantTheme = Math.floor(bandPos) % THEMES.length;
-    if (wantTheme !== this.themeIndex) {
+    const bandInt = Math.floor(bandPos);
+    if (bandInt !== this.themeBandIndex) {
+      this.themeBandIndex = bandInt;
       this.prevThemeIndex = this.themeIndex;
-      this.themeIndex = wantTheme;
+      this.themeIndex = this.pickNextTheme(bandInt);
     }
     // continuous progress within current band = crossfade amount
-    this.themeT = bandPos - Math.floor(bandPos);
+    this.themeT = bandPos - bandInt;
     this.updateClouds(dt);
 
 
@@ -660,6 +810,29 @@ export class Game {
     return this.lerpColor(a, b, this.themeT);
   }
 
+  // pick the next theme for a given band index.
+  // Bands 0..FIXED_INTRO_COUNT-1 are the fixed intro cycle (day/sunset/night/void).
+  // After that, refill from a shuffled queue of exotic palettes without repeats,
+  // so the background never repeats within a single run.
+  private pickNextTheme(bandInt: number): number {
+    if (bandInt < FIXED_INTRO_COUNT) return bandInt;
+    if (this.themeQueue.length === 0) {
+      const pool: number[] = [];
+      for (let i = FIXED_INTRO_COUNT; i < THEMES.length; i++) pool.push(i);
+      // Fisher–Yates
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      // ensure first pick isn't the theme we just left
+      if (pool[0] === this.themeIndex && pool.length > 1) {
+        [pool[0], pool[1]] = [pool[1], pool[0]];
+      }
+      this.themeQueue = pool;
+    }
+    return this.themeQueue.shift()!;
+  }
+
   private render() {
     const { ctx, W, H } = this;
     // shake
@@ -908,17 +1081,13 @@ export class Game {
     ctx.globalAlpha = 1;
 
 
-    // time-of-day: cycleT goes 0 (day) -> 1 (sunset) -> 2 (night) -> 3 (loop)
-    const cycleT = this.themeIndex + this.themeT;
+    // sky details blend per-theme celestial + night intensity
+    const cur = THEMES[this.themeIndex];
+    const prev = THEMES[this.prevThemeIndex];
+    const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars at night — across the whole sky
-    const nightAmt = cycleT < 1
-      ? 0
-      : cycleT < 2
-        ? (cycleT - 1) * 0.6
-        : cycleT < 2.85
-          ? 0.6 + (cycleT - 2) * 0.4
-          : Math.max(0, 1 - (cycleT - 2.85) / 0.15);
+    // stars — crossfade night intensity between themes
+    const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
       ctx.fillStyle = `rgba(255,255,240,${nightAmt})`;
       const starSeed = 1337;
@@ -935,7 +1104,7 @@ export class Game {
       ctx.globalAlpha = 1;
     }
 
-    // sun (day+sunset) / moon (night) arcs across the full screen
+    // celestial disc — sun/moon fades in/out based on adjacent themes
     const drawDisc = (cx: number, cy: number, r: number, fill: string, isMoon: boolean) => {
       ctx.fillStyle = fill;
       ctx.strokeStyle = INK;
@@ -952,16 +1121,27 @@ export class Game {
       }
     };
 
-    if (cycleT < 2) {
-      const t = cycleT / 2; // 0..1
-      const sx = 60 + t * (W - 120);
-      const sy = H + 40 - Math.sin(Math.PI * t) * (H - 40);
-      drawDisc(sx, sy, 24, lantern, false);
-    } else {
-      const t = cycleT - 2; // 0..1
-      const mx = 60 + t * (W - 120);
-      const my = H + 40 - Math.sin(Math.PI * t) * (H - 40);
-      drawDisc(mx, my, 20, "#f4f0d0", true);
+    const sunAlpha =
+      (prev.celestial === "sun" ? 1 - this.themeT : 0) +
+      (cur.celestial === "sun" ? this.themeT : 0);
+    const moonAlpha =
+      (prev.celestial === "moon" ? 1 - this.themeT : 0) +
+      (cur.celestial === "moon" ? this.themeT : 0);
+
+    // arc position tied to progress within the current band
+    const t = this.themeT;
+    const cxPos = 60 + t * (W - 120);
+    const cyPos = H + 40 - Math.sin(Math.PI * t) * (H - 40);
+
+    if (sunAlpha > 0.02) {
+      ctx.globalAlpha = sunAlpha;
+      drawDisc(cxPos, cyPos, 24, lantern, false);
+      ctx.globalAlpha = 1;
+    }
+    if (moonAlpha > 0.02) {
+      ctx.globalAlpha = moonAlpha;
+      drawDisc(cxPos, cyPos, 20, "#f4f0d0", true);
+      ctx.globalAlpha = 1;
     }
   }
 
