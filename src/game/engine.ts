@@ -932,34 +932,50 @@ export class Game {
     const cloudMargin = 120 * speedRatio;
     const H = this.H;
 
+    // suppress cloud presence while inside/entering the void theme
+    const voidCur = THEMES[this.themeIndex].id === "void" ? 1 : 0;
+    const voidPrev = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
+    const voidAmt = voidPrev * (1 - this.themeT) + voidCur * this.themeT;
+    const suppressSpawn = voidAmt > 0.4;
+
     for (let li = 0; li < 3; li++) {
       const cfg = configs[li];
       const drift = this.speed * cfg.speedMult;
       const layer = this.cloudLayers[li];
 
       const needed = Math.ceil((H + cloudMargin * 2) / cfg.spacing) + 2;
-      while (layer.length < needed) {
-        const maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
-        layer.push({
-          y: maxY + cfg.spacing,
-          x: 40 + Math.random() * (this.W - 80),
-          s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
-          shape: Math.floor(Math.random() * 6),
-        });
+      if (!suppressSpawn) {
+        while (layer.length < needed) {
+          const maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
+          layer.push({
+            y: maxY + cfg.spacing,
+            x: 40 + Math.random() * (this.W - 80),
+            s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
+            shape: Math.floor(Math.random() * 6),
+          });
+        }
       }
 
       for (const c of layer) {
         c.y -= drift * dt;
       }
 
-      let maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
-      for (const c of layer) {
-        if (c.y < -cloudMargin) {
-          c.y = maxY + cfg.spacing;
-          maxY = c.y;
-          c.x = 40 + Math.random() * (this.W - 80);
-          c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
-          c.shape = Math.floor(Math.random() * 6);
+      // recycle off-screen clouds only when not suppressed; otherwise let them drain
+      if (!suppressSpawn) {
+        let maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
+        for (const c of layer) {
+          if (c.y < -cloudMargin) {
+            c.y = maxY + cfg.spacing;
+            maxY = c.y;
+            c.x = 40 + Math.random() * (this.W - 80);
+            c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
+            c.shape = Math.floor(Math.random() * 6);
+          }
+        }
+      } else {
+        // drop clouds that have fully scrolled past so they don't linger
+        for (let i = layer.length - 1; i >= 0; i--) {
+          if (layer[i].y < -cloudMargin) layer.splice(i, 1);
         }
       }
     }
