@@ -1081,17 +1081,13 @@ export class Game {
     ctx.globalAlpha = 1;
 
 
-    // time-of-day: cycleT goes 0 (day) -> 1 (sunset) -> 2 (night) -> 3 (loop)
-    const cycleT = this.themeIndex + this.themeT;
+    // sky details blend per-theme celestial + night intensity
+    const cur = THEMES[this.themeIndex];
+    const prev = THEMES[this.prevThemeIndex];
+    const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars at night — across the whole sky
-    const nightAmt = cycleT < 1
-      ? 0
-      : cycleT < 2
-        ? (cycleT - 1) * 0.6
-        : cycleT < 2.85
-          ? 0.6 + (cycleT - 2) * 0.4
-          : Math.max(0, 1 - (cycleT - 2.85) / 0.15);
+    // stars — crossfade night intensity between themes
+    const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
       ctx.fillStyle = `rgba(255,255,240,${nightAmt})`;
       const starSeed = 1337;
@@ -1108,7 +1104,7 @@ export class Game {
       ctx.globalAlpha = 1;
     }
 
-    // sun (day+sunset) / moon (night) arcs across the full screen
+    // celestial disc — sun/moon fades in/out based on adjacent themes
     const drawDisc = (cx: number, cy: number, r: number, fill: string, isMoon: boolean) => {
       ctx.fillStyle = fill;
       ctx.strokeStyle = INK;
@@ -1125,16 +1121,27 @@ export class Game {
       }
     };
 
-    if (cycleT < 2) {
-      const t = cycleT / 2; // 0..1
-      const sx = 60 + t * (W - 120);
-      const sy = H + 40 - Math.sin(Math.PI * t) * (H - 40);
-      drawDisc(sx, sy, 24, lantern, false);
-    } else {
-      const t = cycleT - 2; // 0..1
-      const mx = 60 + t * (W - 120);
-      const my = H + 40 - Math.sin(Math.PI * t) * (H - 40);
-      drawDisc(mx, my, 20, "#f4f0d0", true);
+    const sunAlpha =
+      (prev.celestial === "sun" ? 1 - this.themeT : 0) +
+      (cur.celestial === "sun" ? this.themeT : 0);
+    const moonAlpha =
+      (prev.celestial === "moon" ? 1 - this.themeT : 0) +
+      (cur.celestial === "moon" ? this.themeT : 0);
+
+    // arc position tied to progress within the current band
+    const t = this.themeT;
+    const cxPos = 60 + t * (W - 120);
+    const cyPos = H + 40 - Math.sin(Math.PI * t) * (H - 40);
+
+    if (sunAlpha > 0.02) {
+      ctx.globalAlpha = sunAlpha;
+      drawDisc(cxPos, cyPos, 24, lantern, false);
+      ctx.globalAlpha = 1;
+    }
+    if (moonAlpha > 0.02) {
+      ctx.globalAlpha = moonAlpha;
+      drawDisc(cxPos, cyPos, 20, "#f4f0d0", true);
+      ctx.globalAlpha = 1;
     }
   }
 
