@@ -1075,6 +1075,12 @@ export class Game {
       { alpha: 1.0, simple: false },
     ];
 
+    // fade clouds out while the void theme is active
+    const voidCurAmt = THEMES[this.themeIndex].id === "void" ? 1 : 0;
+    const voidPrevAmt = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
+    const voidAmt = voidPrevAmt * (1 - this.themeT) + voidCurAmt * this.themeT;
+    const cloudVis = 1 - voidAmt;
+
     // far -> near for correct overlap
     for (let li = 0; li < 3; li++) {
       const layer = this.cloudLayers[li];
