@@ -528,6 +528,11 @@ export class Game {
     }
 
     audio.updateMusic((this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED));
+    {
+      const vc = THEMES[this.themeIndex].id === "void" ? 1 : 0;
+      const vp = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
+      audio.updateAmbient(vp * (1 - this.themeT) + vc * this.themeT);
+    }
 
     // emit at ~10Hz to update HUD smoothly without thrash
     if ((performance.now() | 0) % 100 < 17) this.emit();
