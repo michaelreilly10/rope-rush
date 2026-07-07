@@ -1109,10 +1109,15 @@ export class Game {
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
     // stars — crossfade night intensity between themes; scroll with worldY
-    // across parallax layers to sell the falling look (especially in void)
+    // across parallax layers to sell the falling look (especially in void).
+    // Scroll rate and twinkle intensity scale smoothly with falling speed.
     const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
       const starSeed = 1337;
+      const speedRatio = this.speed / BASE_SPEED;
+      const starSpeedMult = 0.85 + 0.35 * speedRatio;
+      const twinkleFreq = speedRatio / 320;
+      const twinkleAmp = 0.25 + 0.35 * Math.min(speedRatio, 2.2);
       const starLayers = [
         { count: 40, speed: 18, size: 1.0 },
         { count: 40, speed: 42, size: 1.2 },
@@ -1125,9 +1130,9 @@ export class Game {
         for (let i = 0; i < sl.count; i++, idx++) {
           const sx = ((idx * 733 + starSeed) % 1000) / 1000 * W;
           const baseY = ((idx * 991 + starSeed) % 1000) / 1000 * spanH;
-          const sy = ((baseY + this.worldY * sl.speed) % spanH + spanH) % spanH - 20;
-          const twinkle = 0.6 + 0.4 * Math.sin(now / 400 + idx);
-          ctx.globalAlpha = nightAmt * twinkle;
+          const sy = ((baseY + this.worldY * sl.speed * starSpeedMult) % spanH + spanH) % spanH - 20;
+          const twinkle = 0.55 + twinkleAmp * Math.sin(now * twinkleFreq + idx);
+          ctx.globalAlpha = Math.min(1, nightAmt * Math.max(0, twinkle));
           ctx.fillStyle = `rgb(255,255,240)`;
           ctx.beginPath();
           ctx.arc(sx, sy, sl.size, 0, Math.PI * 2);
