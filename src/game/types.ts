@@ -35,7 +35,9 @@ export interface Particle {
 
 export type GamePhase = "menu" | "playing" | "paused" | "gameover" | "shop" | "settings";
 
-export type ThemeId = "day" | "sunset" | "night";
+export type ThemeId = string;
+
+export type CelestialKind = "sun" | "moon" | "none";
 
 export interface ThemePalette {
   id: ThemeId;
@@ -46,6 +48,8 @@ export interface ThemePalette {
   beam: string;
   accent: string;
   lantern: string;
+  celestial?: CelestialKind;
+  night?: number; // 0..1 star intensity
 }
 
 export interface HUDState {
