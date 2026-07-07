@@ -19,6 +19,11 @@ class AudioEngine {
   private musicNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
   private musicStarted = false;
   private duckUntil = 0;
+  private ambientGain: GainNode | null = null;
+  private ambientNoise: AudioBufferSourceNode | null = null;
+  private ambientFilter: BiquadFilterNode | null = null;
+  private ambientOscs: OscillatorNode[] = [];
+  private ambientStarted = false;
   public sfxOn = true;
   public musicOn = true;
 
@@ -126,6 +131,65 @@ class AudioEngine {
     this.musicFilter.frequency.setTargetAtTime(ducked ? 350 : target, now, 0.4);
     const baseVol = this.musicOn ? 0.18 + speedPct * 0.1 : 0;
     this.musicGain.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.3);
+  }
+
+  private startAmbient() {
+    if (this.ambientStarted) return;
+    const ctx = this.ensure();
+    if (!ctx || !this.master) return;
+    this.ambientStarted = true;
+
+    // Pink-ish noise buffer (2s loop)
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    let lastOut = 0;
+    for (let i = 0; i < len; i++) {
+      const white = Math.random() * 2 - 1;
+      lastOut = (lastOut + 0.02 * white) / 1.02;
+      data[i] = lastOut * 3.5;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+
+    const filt = ctx.createBiquadFilter();
+    filt.type = "lowpass";
+    filt.frequency.value = 700;
+    filt.Q.value = 0.5;
+
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+
+    src.connect(filt).connect(gain).connect(this.master);
+    src.start();
+
+    // Deep sub drones for atmosphere
+    const droneFreqs = [55, 82.5, 65.4];
+    droneFreqs.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = i === 0 ? "sine" : "triangle";
+      osc.frequency.value = f;
+      g.gain.value = 0.25;
+      osc.connect(g).connect(gain);
+      osc.start();
+      this.ambientOscs.push(osc);
+    });
+
+    this.ambientNoise = src;
+    this.ambientFilter = filt;
+    this.ambientGain = gain;
+  }
+
+  updateAmbient(voidAmt: number) {
+    const ctx = this.ensure();
+    if (!ctx) return;
+    if (voidAmt > 0.01 && !this.ambientStarted) this.startAmbient();
+    if (!this.ambientGain) return;
+    const amt = Math.max(0, Math.min(1, voidAmt));
+    const target = amt * 0.22;
+    this.ambientGain.gain.setTargetAtTime(target, ctx.currentTime, 0.6);
   }
 }
 
