@@ -1094,7 +1094,7 @@ export class Game {
 
         const fadeIn = Math.min(1, (H + cloudMargin - cy) / cloudMargin);
         const fadeOut = Math.min(1, (cy + cloudMargin) / cloudMargin);
-        const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut))) * cfg.alpha;
+        const alpha = Math.max(0, Math.min(1, Math.min(fadeIn, fadeOut))) * cfg.alpha * cloudVis;
         if (alpha <= 0.01) continue;
         ctx.globalAlpha = alpha;
         this.renderCloud(cx, cy, s, cfg.simple, cloud.shape);
