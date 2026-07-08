@@ -1649,6 +1649,16 @@ export class Game {
     ctx.fill();
     ctx.stroke();
 
+    // bright head rim for dark backgrounds
+    if (this.darkness > 0.3) {
+      const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
+      ctx.strokeStyle = `rgba(220,250,255,${rimAlpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -17, 10, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     // mask band (headband color)
     ctx.fillStyle = ch.trim;
     ctx.lineWidth = 2;
