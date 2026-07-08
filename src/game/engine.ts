@@ -1114,36 +1114,25 @@ export class Game {
     const prev = THEMES[this.prevThemeIndex];
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars — crossfade night intensity between themes; scroll with worldY
-    // across parallax layers to sell the falling look (especially in void).
-    // Scroll rate and twinkle intensity scale smoothly with falling speed.
+    // stars — stationary twinkling white dots (Space Boss Fights style).
+    // Fixed positions, no scrolling; twinkle via oscillating opacity 0.3..1.
     const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
       const starSeed = 1337;
-      const speedRatio = this.speed / BASE_SPEED;
-      const starSpeedMult = 0.85 + 0.35 * speedRatio;
-      const twinkleFreq = speedRatio / 320;
-      const twinkleAmp = 0.25 + 0.35 * Math.min(speedRatio, 2.2);
-      const starLayers = [
-        { count: 40, speed: 18, size: 1.0 },
-        { count: 40, speed: 42, size: 1.2 },
-        { count: 25, speed: 90, size: 1.7 },
-      ];
-      const now = performance.now();
-      const spanH = H + 40;
-      let idx = 0;
-      for (const sl of starLayers) {
-        for (let i = 0; i < sl.count; i++, idx++) {
-          const sx = ((idx * 733 + starSeed) % 1000) / 1000 * W;
-          const baseY = ((idx * 991 + starSeed) % 1000) / 1000 * spanH;
-          const sy = ((baseY + this.worldY * sl.speed * starSpeedMult) % spanH + spanH) % spanH - 20;
-          const twinkle = 0.55 + twinkleAmp * Math.sin(now * twinkleFreq + idx);
-          ctx.globalAlpha = Math.min(1, nightAmt * Math.max(0, twinkle));
-          ctx.fillStyle = `rgb(255,255,240)`;
-          ctx.beginPath();
-          ctx.arc(sx, sy, sl.size, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      const count = 200;
+      const now = performance.now() / 1000;
+      for (let i = 0; i < count; i++) {
+        const sx = ((i * 733 + starSeed) % 10000) / 10000 * W;
+        const sy = ((i * 991 + starSeed) % 10000) / 10000 * H;
+        const size = 0.5 + ((i * 137) % 100) / 100 * 1.5;
+        const twinkleSpeed = 0.6 + ((i * 53) % 100) / 100 * 3.0;
+        const phase = ((i * 271) % 628) / 100;
+        const twinkle = 0.65 + 0.35 * Math.sin(now * twinkleSpeed + phase);
+        ctx.globalAlpha = Math.min(1, nightAmt * twinkle);
+        ctx.fillStyle = `rgb(255,255,255)`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, size, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
