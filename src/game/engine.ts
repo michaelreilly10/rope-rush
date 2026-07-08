@@ -260,6 +260,7 @@ export class Game {
   themeT = 0; // crossfade 0..1
   prevThemeIndex = 0;
   private themeBandIndex = 0; // last consumed band integer
+  private darkness = 0; // 0..1 background darkness for contrast boosts
   canContinue = true; // one ad continue per run
 
   // pools
