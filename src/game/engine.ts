@@ -1682,8 +1682,11 @@ export class Game {
     ctx.fillStyle = ch.body;
     ctx.lineWidth = 2;
     // rope sits at local x = -ninjaSide * 22; arm outer edge sits ~2px from it
-    const armX = this.ninjaSide === -1 ? 13 : -20;
-    this.roundedRect(armX, -9, 7, 5, 2);
+    const gripPulse = Math.sin(Math.PI * this.gripPose);
+    const armReach = -this.ninjaSide * 3 * gripPulse; // stretch toward rope on grip
+    const armW = 7 + 2 * gripPulse;
+    const armX = (this.ninjaSide === -1 ? 13 : -20 - 2 * gripPulse) + armReach;
+    this.roundedRect(armX, -9, armW, 5, 2);
     ctx.fill();
     ctx.stroke();
 
