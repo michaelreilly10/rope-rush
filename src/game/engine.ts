@@ -260,6 +260,7 @@ export class Game {
   themeT = 0; // crossfade 0..1
   prevThemeIndex = 0;
   private themeBandIndex = 0; // last consumed band integer
+  private darkness = 0; // 0..1 background darkness for contrast boosts
   canContinue = true; // one ad continue per run
 
   // pools
@@ -791,6 +792,14 @@ export class Game {
     return `rgba(${r},${g},${b},${alpha})`;
   }
 
+  private luminance(hexColor: string): number {
+    const v = parseInt(hexColor.slice(1), 16);
+    const r = (v >> 16) & 255;
+    const g = (v >> 8) & 255;
+    const b = v & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  }
+
   private voidGradientColors(now: number): [string, string] {
     // slow, independent hue drift for bottom and top so the fade never repeats
     const bottomHue = (now * 4.2) % 360;
@@ -858,6 +867,13 @@ export class Game {
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
     }
+
+    // compute background darkness once per frame for contrast boosts
+    const cur = THEMES[this.themeIndex];
+    const prev = THEMES[this.prevThemeIndex];
+    const nightAmt = (prev.night ?? 0) * (1 - this.themeT) + (cur.night ?? 0) * this.themeT;
+    const bgLum = this.luminance(this.themeMix("bg"));
+    this.darkness = Math.max(nightAmt, 1 - Math.min(1, bgLum * 2));
 
     this.renderBackground();
 
@@ -1200,6 +1216,17 @@ export class Game {
     ctx.lineTo(x, H);
     ctx.stroke();
 
+    // bright outer rim in dark themes so the rope doesn't disappear
+    if (this.darkness > 0.25) {
+      const rimAlpha = (this.darkness - 0.25) / 0.75;
+      ctx.strokeStyle = `rgba(180,245,255,${0.15 + rimAlpha * 0.25})`;
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+
     // flat colored rope stroke
     ctx.strokeStyle = color;
     ctx.lineWidth = 8;
@@ -1274,6 +1301,18 @@ export class Game {
         ctx.lineJoin = "round";
         switch (o.kind) {
           case "spike": {
+            // contrast rim for dark backgrounds
+            if (this.darkness > 0.3) {
+              const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
+              ctx.strokeStyle = `rgba(255,245,220,${rimAlpha})`;
+              ctx.lineWidth = 4;
+              ctx.beginPath();
+              ctx.moveTo(side * -16, 0);
+              ctx.lineTo(side * 16, -12);
+              ctx.lineTo(side * 16, 12);
+              ctx.closePath();
+              ctx.stroke();
+            }
             // bright cartoon triangle
             ctx.fillStyle = "#ff5d3a";
             ctx.strokeStyle = INK;
@@ -1303,6 +1342,14 @@ export class Game {
           }
           case "blade": {
             const r = 20;
+            // soft radial glow behind the blade on dark backgrounds
+            if (this.darkness > 0.3) {
+              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+              ctx.fillStyle = `rgba(255,235,160,${glowAlpha})`;
+              ctx.beginPath();
+              ctx.arc(0, 0, 26, 0, Math.PI * 2);
+              ctx.fill();
+            }
             ctx.rotate(o.phase);
             // yellow disc with outlined gear teeth
             ctx.fillStyle = "#ffd23f";
@@ -1347,6 +1394,17 @@ export class Game {
       ctx.save();
       ctx.translate(x, wy);
       ctx.lineJoin = "round";
+      // dark-background glow behind warning
+      if (this.darkness > 0.3) {
+        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
+        ctx.fillStyle = `rgba(255,230,120,${glowAlpha})`;
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(17, 12);
+        ctx.lineTo(-17, 12);
+        ctx.closePath();
+        ctx.fill();
+      }
       // flat warning triangle
       ctx.fillStyle = `rgba(255,210,60,${0.9 * pulse + 0.1})`;
       ctx.strokeStyle = INK;
@@ -1381,6 +1439,19 @@ export class Game {
     ctx.save();
     ctx.translate(x, sy);
     ctx.lineJoin = "round";
+    // dark-background glow behind flying arrow
+    if (this.darkness > 0.3) {
+      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+      ctx.fillStyle = `rgba(255,200,80,${glowAlpha})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -24);
+      ctx.lineTo(11, -4);
+      ctx.lineTo(11, 18);
+      ctx.lineTo(-11, 18);
+      ctx.lineTo(-11, -4);
+      ctx.closePath();
+      ctx.fill();
+    }
     // shaft
     ctx.fillStyle = "#8a5a2a";
     ctx.strokeStyle = INK;
@@ -1508,6 +1579,18 @@ export class Game {
     ctx.ellipse(x, y + 16, 14, 4, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // soft aura in dark themes so the player pops against void/night
+    if (this.darkness > 0.3) {
+      const auraAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+      const grad = ctx.createRadialGradient(x, y + 2, 6, x, y + 2, 18);
+      grad.addColorStop(0, `rgba(200,245,255,${auraAlpha * 0.35})`);
+      grad.addColorStop(1, `rgba(200,245,255,0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(x, y + 2, 18, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.save();
     ctx.translate(x, y);
     if (spin > 0) {
@@ -1523,6 +1606,15 @@ export class Game {
     this.roundedRect(-10, -14, 20, 26, 6);
     ctx.fill();
     ctx.stroke();
+
+    // bright rim for dark backgrounds
+    if (this.darkness > 0.3) {
+      const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.5;
+      ctx.strokeStyle = `rgba(220,250,255,${rimAlpha})`;
+      ctx.lineWidth = 2;
+      this.roundedRect(-11, -15, 22, 28, 7);
+      ctx.stroke();
+    }
 
     // cel-shade highlight wedge on the body
     ctx.save();
@@ -1559,6 +1651,16 @@ export class Game {
     ctx.arc(0, -17, 9, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+
+    // bright head rim for dark backgrounds
+    if (this.darkness > 0.3) {
+      const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
+      ctx.strokeStyle = `rgba(220,250,255,${rimAlpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, -17, 10, 0, Math.PI * 2);
+      ctx.stroke();
+    }
 
     // mask band (headband color)
     ctx.fillStyle = ch.trim;
