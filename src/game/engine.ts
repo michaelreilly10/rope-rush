@@ -1216,6 +1216,17 @@ export class Game {
     ctx.lineTo(x, H);
     ctx.stroke();
 
+    // bright outer rim in dark themes so the rope doesn't disappear
+    if (this.darkness > 0.25) {
+      const rimAlpha = (this.darkness - 0.25) / 0.75;
+      ctx.strokeStyle = `rgba(180,245,255,${0.15 + rimAlpha * 0.25})`;
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+
     // flat colored rope stroke
     ctx.strokeStyle = color;
     ctx.lineWidth = 8;
