@@ -1164,8 +1164,8 @@ export class Game {
       const starSeed = 1337;
       const count = 200;
       const now = performance.now() / 1000;
-      const baseAlpha = nightAmt * 0.9;
-      const twinkleAmp = 0.25 + 0.55 * nightAmt; // 0.25 (dusk) .. 0.8 (full night)
+      const baseAlpha = nightAmt * 0.55;
+      const twinkleAmp = 0.15 + 0.35 * nightAmt; // 0.15 (dusk) .. 0.5 (full night)
       const speedMul = 0.5 + 1.5 * nightAmt;     // 0.5x (dusk) .. 2x (full night)
       for (let i = 0; i < count; i++) {
         const sx = ((i * 733 + starSeed) % 10000) / 10000 * W;
