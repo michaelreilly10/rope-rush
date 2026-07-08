@@ -1579,6 +1579,15 @@ export class Game {
     ctx.ellipse(x, y + 16, 14, 4, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // soft aura in dark themes so the player pops against void/night
+    if (this.darkness > 0.3) {
+      const auraAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+      ctx.fillStyle = `rgba(200,245,255,${auraAlpha})`;
+      ctx.beginPath();
+      ctx.ellipse(x, y + 2, 22, 30, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.save();
     ctx.translate(x, y);
     if (spin > 0) {
