@@ -253,6 +253,7 @@ export class Game {
   shake = 0;
   ninjaSide: Side = -1;
   ninjaSpin = 0; // 0..1 spin animation timer
+  gripPose = 0; // 0..1 quick gripping pose after a side change lands
   spinDir = 1;
   nextSpawnY = 18;
   nextCoinY = 12;
@@ -361,6 +362,7 @@ export class Game {
     this.shake = 0;
     this.ninjaSide = -1;
     this.ninjaSpin = 0;
+    this.gripPose = 0;
     this.nextSpawnY = 18;
     this.nextCoinY = 12;
     this.themeIndex = 0;
@@ -504,7 +506,13 @@ export class Game {
 
 
     // ninja anim
-    if (this.ninjaSpin > 0) this.ninjaSpin = Math.max(0, this.ninjaSpin - dt * 5);
+    if (this.ninjaSpin > 0) {
+      const prev = this.ninjaSpin;
+      this.ninjaSpin = Math.max(0, this.ninjaSpin - dt * 5);
+      // when the spin just finished, trigger a quick grip pose
+      if (prev > 0 && this.ninjaSpin === 0) this.gripPose = 1;
+    }
+    if (this.gripPose > 0) this.gripPose = Math.max(0, this.gripPose - dt * 6);
 
     // spawn obstacles
     while (this.nextSpawnY < this.worldY + 30) {
@@ -1621,6 +1629,15 @@ export class Game {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
+    // quick gripping pose: squash + tilt toward the rope right after landing
+    const grip = this.gripPose;
+    if (grip > 0) {
+      const pulse = Math.sin(Math.PI * grip); // 0 -> 1 -> 0 across the decay
+      const sx = 1 + 0.12 * pulse;
+      const sy = 1 - 0.10 * pulse;
+      ctx.rotate(-this.ninjaSide * 0.08 * pulse);
+      ctx.scale(sx, sy);
+    }
     ctx.lineJoin = "round";
     ctx.strokeStyle = INK;
 
@@ -1665,8 +1682,11 @@ export class Game {
     ctx.fillStyle = ch.body;
     ctx.lineWidth = 2;
     // rope sits at local x = -ninjaSide * 22; arm outer edge sits ~2px from it
-    const armX = this.ninjaSide === -1 ? 13 : -20;
-    this.roundedRect(armX, -9, 7, 5, 2);
+    const gripPulse = Math.sin(Math.PI * this.gripPose);
+    const armReach = -this.ninjaSide * 3 * gripPulse; // stretch toward rope on grip
+    const armW = 7 + 2 * gripPulse;
+    const armX = (this.ninjaSide === -1 ? 13 : -20 - 2 * gripPulse) + armReach;
+    this.roundedRect(armX, -9, armW, 5, 2);
     ctx.fill();
     ctx.stroke();
 
