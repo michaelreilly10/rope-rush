@@ -791,6 +791,13 @@ export class Game {
     return `rgba(${r},${g},${b},${alpha})`;
   }
 
+  private voidGradientColors(now: number): [string, string] {
+    // slow, independent hue drift for bottom and top so the fade never repeats
+    const bottomHue = (now * 4.2) % 360;
+    const topHue = (now * 2.7 + 140) % 360;
+    return [`hsl(${bottomHue}, 70%, 14%)`, `hsl(${topHue}, 60%, 5%)`];
+  }
+
   private roundedRect(x: number, y: number, w: number, h: number, r: number) {
     const { ctx } = this;
     const rr = Math.min(r, w / 2, h / 2);
