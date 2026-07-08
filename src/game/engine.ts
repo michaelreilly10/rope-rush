@@ -1439,6 +1439,19 @@ export class Game {
     ctx.save();
     ctx.translate(x, sy);
     ctx.lineJoin = "round";
+    // dark-background glow behind flying arrow
+    if (this.darkness > 0.3) {
+      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+      ctx.fillStyle = `rgba(255,200,80,${glowAlpha})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -24);
+      ctx.lineTo(11, -4);
+      ctx.lineTo(11, 18);
+      ctx.lineTo(-11, 18);
+      ctx.lineTo(-11, -4);
+      ctx.closePath();
+      ctx.fill();
+    }
     // shaft
     ctx.fillStyle = "#8a5a2a";
     ctx.strokeStyle = INK;
