@@ -1134,21 +1134,24 @@ export class Game {
     const prev = THEMES[this.prevThemeIndex];
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars — stationary twinkling white dots (Space Boss Fights style).
-    // Fixed positions, no scrolling; twinkle via oscillating opacity 0.3..1.
+    // stars — stationary twinkling white dots synced to day/night intensity.
+    // Brighter base opacity and faster, deeper twinkles as nightAmt rises.
     const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
       const starSeed = 1337;
       const count = 200;
       const now = performance.now() / 1000;
+      const baseAlpha = nightAmt * 0.9;
+      const twinkleAmp = 0.25 + 0.55 * nightAmt; // 0.25 (dusk) .. 0.8 (full night)
+      const speedMul = 0.5 + 1.5 * nightAmt;     // 0.5x (dusk) .. 2x (full night)
       for (let i = 0; i < count; i++) {
         const sx = ((i * 733 + starSeed) % 10000) / 10000 * W;
         const sy = ((i * 991 + starSeed) % 10000) / 10000 * H;
         const size = 0.5 + ((i * 137) % 100) / 100 * 1.5;
         const twinkleSpeed = 0.6 + ((i * 53) % 100) / 100 * 3.0;
         const phase = ((i * 271) % 628) / 100;
-        const twinkle = 0.65 + 0.35 * Math.sin(now * twinkleSpeed + phase);
-        ctx.globalAlpha = Math.min(1, nightAmt * twinkle);
+        const twinkle = 1 - twinkleAmp + twinkleAmp * Math.sin(now * twinkleSpeed * speedMul + phase);
+        ctx.globalAlpha = Math.min(1, baseAlpha * twinkle);
         ctx.fillStyle = `rgb(255,255,255)`;
         ctx.beginPath();
         ctx.arc(sx, sy, size, 0, Math.PI * 2);
