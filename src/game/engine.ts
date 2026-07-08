@@ -804,7 +804,7 @@ export class Game {
     // slow, independent hue drift for bottom and top so the fade never repeats
     const bottomHue = (now * 4.2) % 360;
     const topHue = (now * 2.7 + 140) % 360;
-    return [`hsl(${bottomHue}, 70%, 14%)`, `hsl(${topHue}, 60%, 5%)`];
+    return [`hsl(${bottomHue}, 100%, 22%)`, `hsl(${topHue}, 90%, 10%)`];
   }
 
   private roundedRect(x: number, y: number, w: number, h: number, r: number) {
