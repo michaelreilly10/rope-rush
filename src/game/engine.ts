@@ -1394,6 +1394,17 @@ export class Game {
       ctx.save();
       ctx.translate(x, wy);
       ctx.lineJoin = "round";
+      // dark-background glow behind warning
+      if (this.darkness > 0.3) {
+        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
+        ctx.fillStyle = `rgba(255,230,120,${glowAlpha})`;
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(17, 12);
+        ctx.lineTo(-17, 12);
+        ctx.closePath();
+        ctx.fill();
+      }
       // flat warning triangle
       ctx.fillStyle = `rgba(255,210,60,${0.9 * pulse + 0.1})`;
       ctx.strokeStyle = INK;
