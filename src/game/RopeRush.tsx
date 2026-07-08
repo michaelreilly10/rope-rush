@@ -35,7 +35,6 @@ export function RopeRush() {
     const game = new Game();
     gameRef.current = game;
     game.attach(canvas);
-    (window as unknown as { ropeRushGame: Game }).ropeRushGame = game;
     const unsub = game.subscribe(setHud);
     const onResize = () => game.resize();
     window.addEventListener("resize", onResize);
