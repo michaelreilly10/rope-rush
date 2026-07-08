@@ -868,6 +868,13 @@ export class Game {
       ctx.globalAlpha = 1;
     }
 
+    // compute background darkness once per frame for contrast boosts
+    const cur = THEMES[this.themeIndex];
+    const prev = THEMES[this.prevThemeIndex];
+    const nightAmt = (prev.night ?? 0) * (1 - this.themeT) + (cur.night ?? 0) * this.themeT;
+    const bgLum = this.luminance(this.themeMix("bg"));
+    this.darkness = Math.max(nightAmt, 1 - Math.min(1, bgLum * 2));
+
     this.renderBackground();
 
     this.renderRope();
