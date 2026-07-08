@@ -792,6 +792,14 @@ export class Game {
     return `rgba(${r},${g},${b},${alpha})`;
   }
 
+  private luminance(hexColor: string): number {
+    const v = parseInt(hexColor.slice(1), 16);
+    const r = (v >> 16) & 255;
+    const g = (v >> 8) & 255;
+    const b = v & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  }
+
   private voidGradientColors(now: number): [string, string] {
     // slow, independent hue drift for bottom and top so the fade never repeats
     const bottomHue = (now * 4.2) % 360;
