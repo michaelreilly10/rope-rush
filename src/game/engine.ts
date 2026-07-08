@@ -1581,10 +1581,13 @@ export class Game {
 
     // soft aura in dark themes so the player pops against void/night
     if (this.darkness > 0.3) {
-      const auraAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
-      ctx.fillStyle = `rgba(200,245,255,${auraAlpha})`;
+      const auraAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
+      const grad = ctx.createRadialGradient(x, y + 2, 4, x, y + 2, 24);
+      grad.addColorStop(0, `rgba(200,245,255,${auraAlpha * 0.25})`);
+      grad.addColorStop(1, `rgba(200,245,255,0)`);
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.ellipse(x, y + 2, 22, 30, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y + 2, 24, 30, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
