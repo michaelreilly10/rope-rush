@@ -1342,6 +1342,14 @@ export class Game {
           }
           case "blade": {
             const r = 20;
+            // soft radial glow behind the blade on dark backgrounds
+            if (this.darkness > 0.3) {
+              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+              ctx.fillStyle = `rgba(255,235,160,${glowAlpha})`;
+              ctx.beginPath();
+              ctx.arc(0, 0, 26, 0, Math.PI * 2);
+              ctx.fill();
+            }
             ctx.rotate(o.phase);
             // yellow disc with outlined gear teeth
             ctx.fillStyle = "#ffd23f";
