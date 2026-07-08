@@ -1179,12 +1179,12 @@ export class Game {
     // Tied to each theme's night intensity so the sun/moon position tracks
     // the background transition (day→sunset→night = sun descends, moon rises).
     const sunPhaseFor = (th: ThemePalette) => {
-      if (th.celestial !== "sun") return th.night > 0.5 ? 1.25 : -0.25;
+      if (th.celestial !== "sun") return (th.night ?? 0) > 0.5 ? 1.25 : -0.25;
       // more night = lower/further along the arc
       return 0.5 + (th.night ?? 0) * 0.75;
     };
     const moonPhaseFor = (th: ThemePalette) => {
-      if (th.celestial !== "moon") return th.night > 0.5 ? 0.5 : -0.25;
+      if (th.celestial !== "moon") return (th.night ?? 0) > 0.5 ? 0.5 : -0.25;
       return 1 - (th.night ?? 0) * 0.5; // brighter moon-theme = closer to zenith at 0.5
     };
     const sunPhase = mix(sunPhaseFor(prev), sunPhaseFor(cur));
