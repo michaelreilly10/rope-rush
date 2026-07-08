@@ -1183,8 +1183,8 @@ export class Game {
     // the background transition (day→sunset→night = sun descends, moon rises).
     const sunPhaseFor = (th: ThemePalette) => {
       if (th.celestial !== "sun") return (th.night ?? 0) > 0.5 ? 1.25 : -0.25;
-      // more night = lower/further along the arc
-      return 0.5 + (th.night ?? 0) * 0.75;
+      // more night = lower/further along the arc; steeper slope so the sun sets earlier
+      return 0.5 + (th.night ?? 0) * 1.5;
     };
     const moonPhaseFor = (th: ThemePalette) => {
       if (th.celestial !== "moon") return (th.night ?? 0) > 0.5 ? 0.5 : -0.25;
