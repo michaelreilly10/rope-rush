@@ -1629,6 +1629,15 @@ export class Game {
       const ang = (1 - spin) * Math.PI * 2 * this.spinDir;
       ctx.rotate(ang);
     }
+    // quick gripping pose: squash + tilt toward the rope right after landing
+    const grip = this.gripPose;
+    if (grip > 0) {
+      const pulse = Math.sin(Math.PI * grip); // 0 -> 1 -> 0 across the decay
+      const sx = 1 + 0.12 * pulse;
+      const sy = 1 - 0.10 * pulse;
+      ctx.rotate(-this.ninjaSide * 0.08 * pulse);
+      ctx.scale(sx, sy);
+    }
     ctx.lineJoin = "round";
     ctx.strokeStyle = INK;
 
