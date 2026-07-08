@@ -260,7 +260,6 @@ export class Game {
   themeT = 0; // crossfade 0..1
   prevThemeIndex = 0;
   private themeBandIndex = 0; // last consumed band integer
-  private themeQueue: number[] = []; // shuffled exotic-theme indices
   canContinue = true; // one ad continue per run
 
   // pools
@@ -367,7 +366,6 @@ export class Game {
     this.prevThemeIndex = 0;
     this.themeT = 1;
     this.themeBandIndex = 0;
-    this.themeQueue = [];
     this.initClouds();
     this.canContinue = true;
     this.obstacles.forEach((o) => (o.active = false));
@@ -818,25 +816,10 @@ export class Game {
 
   // pick the next theme for a given band index.
   // Bands 0..FIXED_INTRO_COUNT-1 are the fixed intro cycle (day/sunset/night/void).
-  // After that, refill from a shuffled queue of exotic palettes without repeats,
-  // so the background never repeats within a single run.
+  // Once the void is reached, stay there for the rest of the run.
   private pickNextTheme(bandInt: number): number {
-    if (bandInt < FIXED_INTRO_COUNT) return bandInt;
-    if (this.themeQueue.length === 0) {
-      const pool: number[] = [];
-      for (let i = FIXED_INTRO_COUNT; i < THEMES.length; i++) pool.push(i);
-      // Fisher–Yates
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-      }
-      // ensure first pick isn't the theme we just left
-      if (pool[0] === this.themeIndex && pool.length > 1) {
-        [pool[0], pool[1]] = [pool[1], pool[0]];
-      }
-      this.themeQueue = pool;
-    }
-    return this.themeQueue.shift()!;
+    if (bandInt < FIXED_INTRO_COUNT - 1) return bandInt;
+    return FIXED_INTRO_COUNT - 1; // void — lock in forever
   }
 
   private render() {
