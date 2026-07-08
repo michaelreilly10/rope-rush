@@ -260,7 +260,6 @@ export class Game {
   themeT = 0; // crossfade 0..1
   prevThemeIndex = 0;
   private themeBandIndex = 0; // last consumed band integer
-  private themeQueue: number[] = []; // shuffled exotic-theme indices
   canContinue = true; // one ad continue per run
 
   // pools
@@ -367,7 +366,6 @@ export class Game {
     this.prevThemeIndex = 0;
     this.themeT = 1;
     this.themeBandIndex = 0;
-    this.themeQueue = [];
     this.initClouds();
     this.canContinue = true;
     this.obstacles.forEach((o) => (o.active = false));
