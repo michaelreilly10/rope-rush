@@ -1661,10 +1661,12 @@ export class Game {
     ctx.fill();
     ctx.stroke();
 
-    // arm gripping rope
+    // arm gripping rope — reach toward the rope on both sides
     ctx.fillStyle = ch.body;
     ctx.lineWidth = 2;
-    this.roundedRect(this.ninjaSide * -13, -9, 7, 5, 2);
+    // rope sits at local x = -ninjaSide * 22; arm outer edge sits ~2px from it
+    const armX = this.ninjaSide === -1 ? 13 : -20;
+    this.roundedRect(armX, -9, 7, 5, 2);
     ctx.fill();
     ctx.stroke();
 
