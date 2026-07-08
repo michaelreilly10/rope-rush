@@ -1604,6 +1604,15 @@ export class Game {
     ctx.fill();
     ctx.stroke();
 
+    // bright rim for dark backgrounds
+    if (this.darkness > 0.3) {
+      const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.5;
+      ctx.strokeStyle = `rgba(220,250,255,${rimAlpha})`;
+      ctx.lineWidth = 2;
+      this.roundedRect(-11, -15, 22, 28, 7);
+      ctx.stroke();
+    }
+
     // cel-shade highlight wedge on the body
     ctx.save();
     ctx.beginPath();
