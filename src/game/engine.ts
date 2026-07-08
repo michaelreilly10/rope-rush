@@ -253,6 +253,7 @@ export class Game {
   shake = 0;
   ninjaSide: Side = -1;
   ninjaSpin = 0; // 0..1 spin animation timer
+  gripPose = 0; // 0..1 quick gripping pose after a side change lands
   spinDir = 1;
   nextSpawnY = 18;
   nextCoinY = 12;
