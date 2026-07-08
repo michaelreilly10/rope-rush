@@ -505,7 +505,13 @@ export class Game {
 
 
     // ninja anim
-    if (this.ninjaSpin > 0) this.ninjaSpin = Math.max(0, this.ninjaSpin - dt * 5);
+    if (this.ninjaSpin > 0) {
+      const prev = this.ninjaSpin;
+      this.ninjaSpin = Math.max(0, this.ninjaSpin - dt * 5);
+      // when the spin just finished, trigger a quick grip pose
+      if (prev > 0 && this.ninjaSpin === 0) this.gripPose = 1;
+    }
+    if (this.gripPose > 0) this.gripPose = Math.max(0, this.gripPose - dt * 6);
 
     // spawn obstacles
     while (this.nextSpawnY < this.worldY + 30) {
