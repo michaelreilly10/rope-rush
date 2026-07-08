@@ -1301,6 +1301,18 @@ export class Game {
         ctx.lineJoin = "round";
         switch (o.kind) {
           case "spike": {
+            // contrast rim for dark backgrounds
+            if (this.darkness > 0.3) {
+              const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
+              ctx.strokeStyle = `rgba(255,245,220,${rimAlpha})`;
+              ctx.lineWidth = 4;
+              ctx.beginPath();
+              ctx.moveTo(side * -16, 0);
+              ctx.lineTo(side * 16, -12);
+              ctx.lineTo(side * 16, 12);
+              ctx.closePath();
+              ctx.stroke();
+            }
             // bright cartoon triangle
             ctx.fillStyle = "#ff5d3a";
             ctx.strokeStyle = INK;
