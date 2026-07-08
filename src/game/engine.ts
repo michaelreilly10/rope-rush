@@ -791,6 +791,13 @@ export class Game {
     return `rgba(${r},${g},${b},${alpha})`;
   }
 
+  private voidGradientColors(now: number): [string, string] {
+    // slow, independent hue drift for bottom and top so the fade never repeats
+    const bottomHue = (now * 4.2) % 360;
+    const topHue = (now * 2.7 + 140) % 360;
+    return [`hsl(${bottomHue}, 70%, 14%)`, `hsl(${topHue}, 60%, 5%)`];
+  }
+
   private roundedRect(x: number, y: number, w: number, h: number, r: number) {
     const { ctx } = this;
     const rr = Math.min(r, w / 2, h / 2);
@@ -837,6 +844,20 @@ export class Game {
     ctx.fillStyle = this.themeMix("bg");
     ctx.fillRect(0, 0, W, H);
 
+    // void vertical color fade: bottom -> top, constantly shifting hues
+    const voidCurAmt = THEMES[this.themeIndex].id === "void" ? 1 : 0;
+    const voidPrevAmt = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
+    const voidAmt = voidPrevAmt * (1 - this.themeT) + voidCurAmt * this.themeT;
+    if (voidAmt > 0.01) {
+      const [bottom, top] = this.voidGradientColors(performance.now() / 1000);
+      const grad = ctx.createLinearGradient(0, H, 0, 0);
+      grad.addColorStop(0, bottom);
+      grad.addColorStop(1, top);
+      ctx.globalAlpha = voidAmt;
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
 
     this.renderBackground();
 
