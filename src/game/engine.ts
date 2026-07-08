@@ -1174,29 +1174,50 @@ export class Game {
       }
     };
 
-    const sunAlpha =
-      (prev.celestial === "sun" ? 1 - this.themeT : 0) +
-      (cur.celestial === "sun" ? this.themeT : 0);
-    const moonAlpha =
-      (prev.celestial === "moon" ? 1 - this.themeT : 0) +
-      (cur.celestial === "moon" ? this.themeT : 0);
+    // Sky phase per theme: 0 = rising at left horizon, 0.5 = zenith,
+    // 1 = setting at right horizon; outside [0,1] = below horizon (hidden).
+    // Tied to each theme's night intensity so the sun/moon position tracks
+    // the background transition (day→sunset→night = sun descends, moon rises).
+    const sunPhaseFor = (th: ThemePalette) => {
+      if (th.celestial !== "sun") return th.night > 0.5 ? 1.25 : -0.25;
+      // more night = lower/further along the arc
+      return 0.5 + (th.night ?? 0) * 0.75;
+    };
+    const moonPhaseFor = (th: ThemePalette) => {
+      if (th.celestial !== "moon") return th.night > 0.5 ? 0.5 : -0.25;
+      return 1 - (th.night ?? 0) * 0.5; // brighter moon-theme = closer to zenith at 0.5
+    };
+    const sunPhase = mix(sunPhaseFor(prev), sunPhaseFor(cur));
+    const moonPhase = mix(moonPhaseFor(prev), moonPhaseFor(cur));
 
-    // arc position tied to progress within the current band
-    const t = this.themeT;
-    const cxPos = 60 + t * (W - 120);
-    const cyPos = H + 40 - Math.sin(Math.PI * t) * (H - 40);
+    const phaseToPos = (phase: number) => {
+      const cx = phase * W;
+      const cy = H + 40 - Math.sin(Math.PI * phase) * (H - 40);
+      return { cx, cy };
+    };
+    const visibility = (phase: number) => {
+      if (phase <= 0 || phase >= 1) return 0;
+      // ease in/out near horizons
+      return Math.min(1, Math.sin(Math.PI * phase) * 3);
+    };
 
-    if (sunAlpha > 0.02) {
-      ctx.globalAlpha = sunAlpha;
-      drawDisc(cxPos, cyPos, 24, lantern, false);
+    const sunVis = visibility(sunPhase);
+    const moonVis = visibility(moonPhase);
+
+    if (sunVis > 0.02) {
+      const p = phaseToPos(sunPhase);
+      ctx.globalAlpha = sunVis;
+      drawDisc(p.cx, p.cy, 24, lantern, false);
       ctx.globalAlpha = 1;
     }
-    if (moonAlpha > 0.02) {
-      ctx.globalAlpha = moonAlpha;
-      drawDisc(cxPos, cyPos, 20, "#f4f0d0", true);
+    if (moonVis > 0.02) {
+      const p = phaseToPos(moonPhase);
+      ctx.globalAlpha = moonVis;
+      drawDisc(p.cx, p.cy, 20, "#f4f0d0", true);
       ctx.globalAlpha = 1;
     }
   }
+
 
 
 
