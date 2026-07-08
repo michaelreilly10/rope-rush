@@ -1068,19 +1068,34 @@ export class Game {
       ],
     ];
     const puffs = simple && shape > 2 ? puffSets[shape % 3] : puffSets[shape];
+    // bounding ellipse to plug any gaps between adjacent puffs
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const [dx, dy, r] of puffs) {
+      minX = Math.min(minX, dx - r * 0.6);
+      maxX = Math.max(maxX, dx + r * 0.6);
+      minY = Math.min(minY, dy - r * 0.45);
+      maxY = Math.max(maxY, dy + r * 0.45);
+    }
+    const bcx = (minX + maxX) / 2;
+    const bcy = (minY + maxY) / 2;
+    const brx = (maxX - minX) / 2;
+    const bry = (maxY - minY) / 2;
     // soft underside shadow
     ctx.fillStyle = "rgba(90,110,150,0.22)";
     ctx.beginPath();
+    ctx.ellipse(cx + bcx, cy + bcy + 6, brx, bry, 0, 0, Math.PI * 2);
     for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy + 6, r, 0, Math.PI * 2);
     ctx.fill();
     // outline
     ctx.fillStyle = INK;
     ctx.beginPath();
+    ctx.ellipse(cx + bcx, cy + bcy, brx + 2, bry + 2, 0, 0, Math.PI * 2);
     for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r + 2, 0, Math.PI * 2);
     ctx.fill();
     // main body
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
+    ctx.ellipse(cx + bcx, cy + bcy, brx, bry, 0, 0, Math.PI * 2);
     for (const [dx, dy, r] of puffs) ctx.arc(cx + dx, cy + dy, r, 0, Math.PI * 2);
     ctx.fill();
     // highlight
