@@ -1349,7 +1349,8 @@ export class Game {
         ctx.lineJoin = "round";
         switch (o.kind) {
           case "spike": {
-            // contrast rim for dark backgrounds
+            const accent = this.themeMix("accent");
+            // dark-background rim around the wooden stake
             if (this.darkness > 0.3) {
               const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
               ctx.strokeStyle = `rgba(255,245,220,${rimAlpha})`;
@@ -1361,8 +1362,8 @@ export class Game {
               ctx.closePath();
               ctx.stroke();
             }
-            // bright cartoon triangle
-            ctx.fillStyle = "#ff5d3a";
+            // wooden stake body
+            ctx.fillStyle = "#8a5a3a";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -1372,25 +1373,55 @@ export class Game {
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            // highlight sliver
-            ctx.fillStyle = "#ffd7a8";
+            // shadow side
+            ctx.fillStyle = "#5c3a22";
             ctx.beginPath();
-            ctx.moveTo(side * -10, 0);
-            ctx.lineTo(side * 6, -5);
-            ctx.lineTo(side * 6, -1);
+            ctx.moveTo(side * -14, 0);
+            ctx.lineTo(side * 14, -10);
+            ctx.lineTo(side * 8, -2);
+            ctx.lineTo(side * -6, 2);
             ctx.closePath();
             ctx.fill();
-            // dark base plate
-            ctx.fillStyle = "#4a2618";
+            // wood grain lines
+            ctx.strokeStyle = "rgba(60,35,18,0.5)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(side * -8, 0);
+            ctx.lineTo(side * 4, -6);
+            ctx.moveTo(side * -6, 3);
+            ctx.lineTo(side * 6, -4);
+            ctx.moveTo(side * -4, 6);
+            ctx.lineTo(side * 8, 1);
+            ctx.stroke();
+            // sharpened tip — theme accent for the hazard read
+            ctx.fillStyle = accent;
+            ctx.beginPath();
+            ctx.moveTo(side * -14, 0);
+            ctx.lineTo(side * 2, -5);
+            ctx.lineTo(side * 2, 5);
+            ctx.closePath();
+            ctx.fill();
+            // highlight on tip
+            ctx.fillStyle = "rgba(255,255,255,0.25)";
+            ctx.beginPath();
+            ctx.moveTo(side * -12, 0);
+            ctx.lineTo(side * -2, -2);
+            ctx.lineTo(side * -2, 1);
+            ctx.closePath();
+            ctx.fill();
+            // iron band at base
+            ctx.fillStyle = "#3a2a22";
             ctx.strokeStyle = INK;
-            this.roundedRect(side * 12 - 3, -12, 6, 24, 2);
+            ctx.lineWidth = 1.5;
+            this.roundedRect(side * 10 - 4, -10, 8, 20, 2);
             ctx.fill();
             ctx.stroke();
             break;
           }
           case "blade": {
             const r = 20;
-            // soft radial glow behind the blade on dark backgrounds
+            const accent = this.themeMix("accent");
+            // soft radial glow behind the wheel on dark backgrounds
             if (this.darkness > 0.3) {
               const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
               ctx.fillStyle = `rgba(255,235,160,${glowAlpha})`;
@@ -1399,26 +1430,61 @@ export class Game {
               ctx.fill();
             }
             ctx.rotate(o.phase);
-            // yellow disc with outlined gear teeth
-            ctx.fillStyle = "#ffd23f";
+            // wooden wheel disc
+            ctx.fillStyle = "#7a4a2a";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            for (let i = 0; i < 8; i++) {
-              const a = (i / 8) * Math.PI * 2;
-              const rr = i % 2 === 0 ? r : r - 6;
-              const px = Math.cos(a) * rr;
-              const py = Math.sin(a) * rr;
-              if (i === 0) ctx.moveTo(px, py);
-              else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
+            ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            // dark hub
-            ctx.fillStyle = INK;
+            // inner wood ring
+            ctx.fillStyle = "#9a6a4a";
+            ctx.beginPath();
+            ctx.arc(0, 0, r - 8, 0, Math.PI * 2);
+            ctx.fill();
+            // wood grain spokes
+            ctx.strokeStyle = "rgba(60,35,18,0.45)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for (let i = 0; i < 4; i++) {
+              const a = (i / 4) * Math.PI * 2;
+              ctx.moveTo(Math.cos(a) * 5, Math.sin(a) * 5);
+              ctx.lineTo(Math.cos(a) * (r - 10), Math.sin(a) * (r - 10));
+            }
+            ctx.stroke();
+            // metal blades bolted to the wheel
+            ctx.fillStyle = accent;
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+              const a = (i / 4) * Math.PI * 2 + Math.PI / 8;
+              ctx.save();
+              ctx.rotate(a);
+              ctx.beginPath();
+              ctx.moveTo(0, -3);
+              ctx.lineTo(r + 5, -2);
+              ctx.lineTo(r + 5, 2);
+              ctx.lineTo(0, 3);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              // bolt
+              ctx.fillStyle = "#3a2a22";
+              ctx.beginPath();
+              ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = accent;
+              ctx.restore();
+            }
+            // iron hub
+            ctx.fillStyle = "#3a2a22";
             ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#ff5d3a";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
+            // hub pin
+            ctx.fillStyle = accent;
             ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill();
             break;
           }
@@ -1439,13 +1505,14 @@ export class Game {
       const t = o.phase / ARROW_WARN;
       const pulse = 0.55 + 0.45 * Math.abs(Math.sin(o.phase * 18));
       const wy = H - 46;
+      const accent = this.themeMix("accent");
       ctx.save();
       ctx.translate(x, wy);
       ctx.lineJoin = "round";
-      // dark-background glow behind warning
+      // dark-background glow behind warning marker
       if (this.darkness > 0.3) {
         const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
-        ctx.fillStyle = `rgba(255,230,120,${glowAlpha})`;
+        ctx.fillStyle = this.rgba(accent, glowAlpha);
         ctx.beginPath();
         ctx.moveTo(0, -18);
         ctx.lineTo(17, 12);
@@ -1453,8 +1520,8 @@ export class Game {
         ctx.closePath();
         ctx.fill();
       }
-      // flat warning triangle
-      ctx.fillStyle = `rgba(255,210,60,${0.9 * pulse + 0.1})`;
+      // wooden warning stake
+      ctx.fillStyle = `rgba(122,74,42,${0.9 * pulse + 0.1})`;
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -1464,7 +1531,17 @@ export class Game {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = INK;
+      // wood grain on stake
+      ctx.strokeStyle = "rgba(60,35,18,0.5)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-6, 4);
+      ctx.lineTo(6, -6);
+      ctx.moveTo(-4, 8);
+      ctx.lineTo(4, 0);
+      ctx.stroke();
+      // accent crack/exclamation mark
+      ctx.fillStyle = accent;
       ctx.fillRect(-1.5, -8, 3, 10);
       ctx.fillRect(-1.5, 5, 3, 3);
       // chevrons
@@ -1481,16 +1558,17 @@ export class Game {
       ctx.restore();
       return;
     }
-    // flying cartoon arrow
+    // flying wooden arrow
     const flyP = (o.phase - ARROW_WARN) / ARROW_FLY;
     const sy = (H + 20) + (-H - 40) * flyP;
+    const accent = this.themeMix("accent");
     ctx.save();
     ctx.translate(x, sy);
     ctx.lineJoin = "round";
     // dark-background glow behind flying arrow
     if (this.darkness > 0.3) {
       const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
-      ctx.fillStyle = `rgba(255,200,80,${glowAlpha})`;
+      ctx.fillStyle = this.rgba(accent, glowAlpha);
       ctx.beginPath();
       ctx.moveTo(0, -24);
       ctx.lineTo(11, -4);
@@ -1507,8 +1585,19 @@ export class Game {
     this.roundedRect(-2, -10, 4, 22, 1.5);
     ctx.fill();
     ctx.stroke();
-    // arrowhead
-    ctx.fillStyle = "#e8e2d0";
+    // wood grain on shaft
+    ctx.strokeStyle = "rgba(60,35,18,0.5)";
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(-0.8, -8);
+    ctx.lineTo(-0.8, 8);
+    ctx.moveTo(0.8, -6);
+    ctx.lineTo(0.8, 10);
+    ctx.stroke();
+    // arrowhead — theme accent stone/metal tip
+    ctx.fillStyle = accent;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, -20);
     ctx.lineTo(8, -6);
@@ -1516,8 +1605,18 @@ export class Game {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // fletching (bright)
-    ctx.fillStyle = "#ff5d3a";
+    // highlight on tip
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.lineTo(3, -10);
+    ctx.lineTo(-1, -10);
+    ctx.closePath();
+    ctx.fill();
+    // fletching — natural feathers
+    ctx.fillStyle = "#e8e2d0";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(-2, 10);
     ctx.lineTo(-8, 16);
@@ -1531,6 +1630,15 @@ export class Game {
     ctx.lineTo(2, 14);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+    // feather quill lines
+    ctx.strokeStyle = "rgba(120,100,80,0.5)";
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(-2, 10);
+    ctx.lineTo(-5, 15);
+    ctx.moveTo(2, 10);
+    ctx.lineTo(5, 15);
     ctx.stroke();
     ctx.restore();
   }
