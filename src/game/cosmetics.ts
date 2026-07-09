@@ -35,7 +35,7 @@ export const CHARACTERS: CharSkin[] = [
 ];
 
 export const ROPES: RopeSkin[] = [
-  { id: "rope", name: "Neon Cable", price: 0, color: "#00d9ff", glow: "#00d9ff", style: "neon" },
+  { id: "rope", name: "Hemp Rope", price: 0, color: "#c9a86c", style: "neon" },
   { id: "chain", name: "Iron Chain", price: 400, color: "#9aa3ad", style: "chain" },
   { id: "vine", name: "Jungle Vine", price: 800, color: "#5b8a3a", style: "vine" },
   { id: "neon", name: "Magenta Pulse", price: 2500, color: "#ff2e63", glow: "#ff2e63", style: "neon" },
