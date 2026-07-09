@@ -1511,7 +1511,7 @@ export class Game {
       ctx.lineJoin = "round";
       // dark-background glow behind warning marker
       if (this.darkness > 0.3) {
-        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
+        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.6;
         ctx.fillStyle = this.rgba(accent, glowAlpha);
         ctx.beginPath();
         ctx.moveTo(0, -18);
@@ -1521,7 +1521,7 @@ export class Game {
         ctx.fill();
       }
       // wooden warning stake
-      ctx.fillStyle = `rgba(122,74,42,${0.9 * pulse + 0.1})`;
+      ctx.fillStyle = `rgba(180,110,65,${0.9 * pulse + 0.1})`;
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -1532,7 +1532,7 @@ export class Game {
       ctx.fill();
       ctx.stroke();
       // wood grain on stake
-      ctx.strokeStyle = "rgba(60,35,18,0.5)";
+      ctx.strokeStyle = "rgba(100,55,28,0.55)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(-6, 4);
@@ -1542,8 +1542,8 @@ export class Game {
       ctx.stroke();
       // accent crack/exclamation mark
       ctx.fillStyle = accent;
-      ctx.fillRect(-1.5, -8, 3, 10);
-      ctx.fillRect(-1.5, 5, 3, 3);
+      ctx.fillRect(-2, -9, 4, 11);
+      ctx.fillRect(-2, 5, 4, 4);
       // chevrons
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2;
