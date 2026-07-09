@@ -60,7 +60,7 @@ const THEMES: ThemePalette[] = [
     bgFar: "#0a0d24",
     bgNear: "#0e1a14",
     beam: "#08120a",
-    accent: "#6b8afe",
+    accent: "#8aa4ff",
     lantern: "#f4f0d0",
     celestial: "moon",
     night: 1,
@@ -72,7 +72,7 @@ const THEMES: ThemePalette[] = [
     bgFar: "#020204",
     bgNear: "#08080c",
     beam: "#000000",
-    accent: "#4a4a66",
+    accent: "#b48aff",
     lantern: "#cfcfe0",
     celestial: "none",
     night: 0.85,
@@ -1352,9 +1352,9 @@ export class Game {
             const accent = this.themeMix("accent");
             // dark-background rim around the wooden stake
             if (this.darkness > 0.3) {
-              const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
-              ctx.strokeStyle = `rgba(255,245,220,${rimAlpha})`;
-              ctx.lineWidth = 4;
+              const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.7;
+              ctx.strokeStyle = `rgba(255,250,220,${rimAlpha})`;
+              ctx.lineWidth = 5;
               ctx.beginPath();
               ctx.moveTo(side * -16, 0);
               ctx.lineTo(side * 16, -12);
@@ -1363,7 +1363,7 @@ export class Game {
               ctx.stroke();
             }
             // wooden stake body
-            ctx.fillStyle = "#8a5a3a";
+            ctx.fillStyle = "#c47d4a";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -1374,7 +1374,7 @@ export class Game {
             ctx.fill();
             ctx.stroke();
             // shadow side
-            ctx.fillStyle = "#5c3a22";
+            ctx.fillStyle = "#8a4a2a";
             ctx.beginPath();
             ctx.moveTo(side * -14, 0);
             ctx.lineTo(side * 14, -10);
@@ -1383,7 +1383,7 @@ export class Game {
             ctx.closePath();
             ctx.fill();
             // wood grain lines
-            ctx.strokeStyle = "rgba(60,35,18,0.5)";
+            ctx.strokeStyle = "rgba(90,50,25,0.55)";
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(side * -8, 0);
@@ -1401,8 +1401,8 @@ export class Game {
             ctx.lineTo(side * 2, 5);
             ctx.closePath();
             ctx.fill();
-            // highlight on tip
-            ctx.fillStyle = "rgba(255,255,255,0.25)";
+            // bright tip edge
+            ctx.fillStyle = "rgba(255,255,255,0.45)";
             ctx.beginPath();
             ctx.moveTo(side * -12, 0);
             ctx.lineTo(side * -2, -2);
@@ -1410,7 +1410,7 @@ export class Game {
             ctx.closePath();
             ctx.fill();
             // iron band at base
-            ctx.fillStyle = "#3a2a22";
+            ctx.fillStyle = "#5a3a2a";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 1.5;
             this.roundedRect(side * 10 - 4, -10, 8, 20, 2);
@@ -1421,17 +1421,17 @@ export class Game {
           case "blade": {
             const r = 20;
             const accent = this.themeMix("accent");
-            // soft radial glow behind the wheel on dark backgrounds
+            // bright radial glow behind the wheel on dark backgrounds
             if (this.darkness > 0.3) {
-              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
-              ctx.fillStyle = `rgba(255,235,160,${glowAlpha})`;
+              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.55;
+              ctx.fillStyle = this.rgba(accent, glowAlpha);
               ctx.beginPath();
-              ctx.arc(0, 0, 26, 0, Math.PI * 2);
+              ctx.arc(0, 0, 28, 0, Math.PI * 2);
               ctx.fill();
             }
             ctx.rotate(o.phase);
             // wooden wheel disc
-            ctx.fillStyle = "#7a4a2a";
+            ctx.fillStyle = "#b06d3d";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -1439,12 +1439,12 @@ export class Game {
             ctx.fill();
             ctx.stroke();
             // inner wood ring
-            ctx.fillStyle = "#9a6a4a";
+            ctx.fillStyle = "#d48c5e";
             ctx.beginPath();
             ctx.arc(0, 0, r - 8, 0, Math.PI * 2);
             ctx.fill();
             // wood grain spokes
-            ctx.strokeStyle = "rgba(60,35,18,0.45)";
+            ctx.strokeStyle = "rgba(100,55,28,0.55)";
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             for (let i = 0; i < 4; i++) {
@@ -1470,7 +1470,7 @@ export class Game {
               ctx.fill();
               ctx.stroke();
               // bolt
-              ctx.fillStyle = "#3a2a22";
+              ctx.fillStyle = "#5a3a2a";
               ctx.beginPath();
               ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
               ctx.fill();
@@ -1478,14 +1478,14 @@ export class Game {
               ctx.restore();
             }
             // iron hub
-            ctx.fillStyle = "#3a2a22";
+            ctx.fillStyle = "#5a3a2a";
             ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = INK;
             ctx.lineWidth = 1.5;
             ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
             // hub pin
             ctx.fillStyle = accent;
-            ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
             break;
           }
         }
@@ -1511,7 +1511,7 @@ export class Game {
       ctx.lineJoin = "round";
       // dark-background glow behind warning marker
       if (this.darkness > 0.3) {
-        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
+        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.6;
         ctx.fillStyle = this.rgba(accent, glowAlpha);
         ctx.beginPath();
         ctx.moveTo(0, -18);
@@ -1521,7 +1521,7 @@ export class Game {
         ctx.fill();
       }
       // wooden warning stake
-      ctx.fillStyle = `rgba(122,74,42,${0.9 * pulse + 0.1})`;
+      ctx.fillStyle = `rgba(180,110,65,${0.9 * pulse + 0.1})`;
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -1532,7 +1532,7 @@ export class Game {
       ctx.fill();
       ctx.stroke();
       // wood grain on stake
-      ctx.strokeStyle = "rgba(60,35,18,0.5)";
+      ctx.strokeStyle = "rgba(100,55,28,0.55)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(-6, 4);
@@ -1542,8 +1542,8 @@ export class Game {
       ctx.stroke();
       // accent crack/exclamation mark
       ctx.fillStyle = accent;
-      ctx.fillRect(-1.5, -8, 3, 10);
-      ctx.fillRect(-1.5, 5, 3, 3);
+      ctx.fillRect(-2, -9, 4, 11);
+      ctx.fillRect(-2, 5, 4, 4);
       // chevrons
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2;
@@ -1565,9 +1565,9 @@ export class Game {
     ctx.save();
     ctx.translate(x, sy);
     ctx.lineJoin = "round";
-    // dark-background glow behind flying arrow
+    // bright dark-background glow behind flying arrow
     if (this.darkness > 0.3) {
-      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.55;
       ctx.fillStyle = this.rgba(accent, glowAlpha);
       ctx.beginPath();
       ctx.moveTo(0, -24);
@@ -1579,14 +1579,14 @@ export class Game {
       ctx.fill();
     }
     // shaft
-    ctx.fillStyle = "#8a5a2a";
+    ctx.fillStyle = "#c47d4a";
     ctx.strokeStyle = INK;
     ctx.lineWidth = 2;
     this.roundedRect(-2, -10, 4, 22, 1.5);
     ctx.fill();
     ctx.stroke();
     // wood grain on shaft
-    ctx.strokeStyle = "rgba(60,35,18,0.5)";
+    ctx.strokeStyle = "rgba(100,55,28,0.55)";
     ctx.lineWidth = 0.75;
     ctx.beginPath();
     ctx.moveTo(-0.8, -8);
@@ -1606,7 +1606,7 @@ export class Game {
     ctx.fill();
     ctx.stroke();
     // highlight on tip
-    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
     ctx.beginPath();
     ctx.moveTo(0, -18);
     ctx.lineTo(3, -10);
@@ -1614,7 +1614,7 @@ export class Game {
     ctx.closePath();
     ctx.fill();
     // fletching — natural feathers
-    ctx.fillStyle = "#e8e2d0";
+    ctx.fillStyle = "#fff8e8";
     ctx.strokeStyle = INK;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1632,7 +1632,7 @@ export class Game {
     ctx.fill();
     ctx.stroke();
     // feather quill lines
-    ctx.strokeStyle = "rgba(120,100,80,0.5)";
+    ctx.strokeStyle = "rgba(160,130,100,0.55)";
     ctx.lineWidth = 0.75;
     ctx.beginPath();
     ctx.moveTo(-2, 10);
