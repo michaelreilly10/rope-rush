@@ -1349,7 +1349,8 @@ export class Game {
         ctx.lineJoin = "round";
         switch (o.kind) {
           case "spike": {
-            // contrast rim for dark backgrounds
+            const accent = this.themeMix("accent");
+            // dark-background rim around the wooden stake
             if (this.darkness > 0.3) {
               const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.45;
               ctx.strokeStyle = `rgba(255,245,220,${rimAlpha})`;
@@ -1361,8 +1362,8 @@ export class Game {
               ctx.closePath();
               ctx.stroke();
             }
-            // bright cartoon triangle
-            ctx.fillStyle = "#ff5d3a";
+            // wooden stake body
+            ctx.fillStyle = "#8a5a3a";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -1372,18 +1373,47 @@ export class Game {
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            // highlight sliver
-            ctx.fillStyle = "#ffd7a8";
+            // shadow side
+            ctx.fillStyle = "#5c3a22";
             ctx.beginPath();
-            ctx.moveTo(side * -10, 0);
-            ctx.lineTo(side * 6, -5);
-            ctx.lineTo(side * 6, -1);
+            ctx.moveTo(side * -14, 0);
+            ctx.lineTo(side * 14, -10);
+            ctx.lineTo(side * 8, -2);
+            ctx.lineTo(side * -6, 2);
             ctx.closePath();
             ctx.fill();
-            // dark base plate
-            ctx.fillStyle = "#4a2618";
+            // wood grain lines
+            ctx.strokeStyle = "rgba(60,35,18,0.5)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(side * -8, 0);
+            ctx.lineTo(side * 4, -6);
+            ctx.moveTo(side * -6, 3);
+            ctx.lineTo(side * 6, -4);
+            ctx.moveTo(side * -4, 6);
+            ctx.lineTo(side * 8, 1);
+            ctx.stroke();
+            // sharpened tip — theme accent for the hazard read
+            ctx.fillStyle = accent;
+            ctx.beginPath();
+            ctx.moveTo(side * -14, 0);
+            ctx.lineTo(side * 2, -5);
+            ctx.lineTo(side * 2, 5);
+            ctx.closePath();
+            ctx.fill();
+            // highlight on tip
+            ctx.fillStyle = "rgba(255,255,255,0.25)";
+            ctx.beginPath();
+            ctx.moveTo(side * -12, 0);
+            ctx.lineTo(side * -2, -2);
+            ctx.lineTo(side * -2, 1);
+            ctx.closePath();
+            ctx.fill();
+            // iron band at base
+            ctx.fillStyle = "#3a2a22";
             ctx.strokeStyle = INK;
-            this.roundedRect(side * 12 - 3, -12, 6, 24, 2);
+            ctx.lineWidth = 1.5;
+            this.roundedRect(side * 10 - 4, -10, 8, 20, 2);
             ctx.fill();
             ctx.stroke();
             break;
