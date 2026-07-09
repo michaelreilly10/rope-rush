@@ -209,16 +209,13 @@ function resetPct(score: number) {
   return 0.6;
 }
 
-const ARROW_WARN = 0.75; // seconds warning shows at bottom
-const ARROW_FLY = 0.32; // seconds arrow takes to rise across screen
-const ARROW_TOTAL = ARROW_WARN + ARROW_FLY;
 
 function bandKinds(score: number): ObstacleKind[] {
   if (score < 300) return ["spike"];
   if (score < 600) return ["spike", "blade"];
-  if (score < 1200) return ["spike", "blade", "arrow"];
-  return ["spike", "spike", "blade", "blade", "arrow"];
+  return ["spike", "spike", "blade", "blade"];
 }
+
 
 function bandSpawnGap(score: number, speed: number): number {
   // Vertical meters between obstacles. Tighter as score grows, but always
@@ -597,31 +594,6 @@ export class Game {
     const now = performance.now() / 1000;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      if (o.kind === "arrow") {
-        const prev = o.phase;
-        o.phase += dt;
-        // spawn small flame trail while flying
-        if (o.phase > ARROW_WARN && o.phase < ARROW_TOTAL && Math.random() < 0.9) {
-          this.spawnArrowFlame(o.side as Side, o.phase);
-        }
-        // detect crossing of ninja Y (H*0.55). Screen y goes from H+20 -> -20 over ARROW_FLY.
-        const hitP = (this.H + 20 - this.H * 0.55) / (this.H + 40);
-        const flyPrev = (prev - ARROW_WARN) / ARROW_FLY;
-        const flyNow = (o.phase - ARROW_WARN) / ARROW_FLY;
-        if (!o.hit && now > this.invulnUntil && flyPrev < hitP && flyNow >= hitP) {
-          const onSide = o.side === this.ninjaSide;
-          if (onSide) { o.hit = true; this.takeHit(); }
-        }
-        if (o.phase >= ARROW_TOTAL) {
-          if (!o.hit && !o.passed) {
-            o.passed = true;
-            this.combo++;
-            if (this.combo % 5 === 0) audio.sfx("combo");
-          }
-          o.active = false;
-        }
-        continue;
-      }
       o.phase += dt * (o.kind === "blade" ? 6 : 2);
       // off screen below (above on screen since environment scrolls up)
       if (o.y < ninjaY - 20) {
@@ -760,22 +732,6 @@ export class Game {
     p.max = 0.6;
     p.color = "#ff5a4a";
     p.size = 4;
-  }
-  private spawnArrowFlame(side: Side, phase: number) {
-    const p = this.getParticle();
-    if (!p) return;
-    const flyP = Math.max(0, Math.min(1, (phase - ARROW_WARN) / ARROW_FLY));
-    const sy = (this.H + 20) + (-this.H - 40) * flyP;
-    p.active = true;
-    p.kind = "spark";
-    p.x = this.W / 2 + side * 28 + (Math.random() - 0.5) * 6;
-    p.y = sy + 14 + Math.random() * 8;
-    p.vx = (Math.random() - 0.5) * 20;
-    p.vy = 40 + Math.random() * 40;
-    p.life = 0.35;
-    p.max = 0.35;
-    p.color = Math.random() < 0.5 ? "#ffb347" : "#ff5a1f";
-    p.size = 3 + Math.random() * 2;
   }
 
   // ---------- render ----------
@@ -1336,10 +1292,6 @@ export class Game {
     const { ctx, W } = this;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      if (o.kind === "arrow") {
-        this.renderArrow(o);
-        continue;
-      }
       const sy = this.worldToScreenY(o.y);
       if (sy < -40 || sy > this.H + 40) continue;
       const renderSide = (side: Side) => {
@@ -1496,152 +1448,6 @@ export class Game {
     }
   }
 
-
-  private renderArrow(o: Obstacle) {
-    const { ctx, W, H } = this;
-    const side = (o.side || 1) as Side;
-    const x = W / 2 + side * 28;
-    if (o.phase < ARROW_WARN) {
-      const t = o.phase / ARROW_WARN;
-      const pulse = 0.55 + 0.45 * Math.abs(Math.sin(o.phase * 18));
-      const wy = H - 46;
-      const accent = this.themeMix("accent");
-      ctx.save();
-      ctx.translate(x, wy);
-      ctx.lineJoin = "round";
-      // dark-background glow behind warning marker
-      if (this.darkness > 0.3) {
-        const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.6;
-        ctx.fillStyle = this.rgba(accent, glowAlpha);
-        ctx.beginPath();
-        ctx.moveTo(0, -18);
-        ctx.lineTo(17, 12);
-        ctx.lineTo(-17, 12);
-        ctx.closePath();
-        ctx.fill();
-      }
-      // wooden warning stake
-      ctx.fillStyle = `rgba(180,110,65,${0.9 * pulse + 0.1})`;
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(0, -14);
-      ctx.lineTo(13, 10);
-      ctx.lineTo(-13, 10);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      // wood grain on stake
-      ctx.strokeStyle = "rgba(100,55,28,0.55)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(-6, 4);
-      ctx.lineTo(6, -6);
-      ctx.moveTo(-4, 8);
-      ctx.lineTo(4, 0);
-      ctx.stroke();
-      // accent crack/exclamation mark
-      ctx.fillStyle = accent;
-      ctx.fillRect(-2, -9, 4, 11);
-      ctx.fillRect(-2, 5, 4, 4);
-      // chevrons
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 3; i++) {
-        const cy = 22 + i * 8 - t * 10;
-        ctx.beginPath();
-        ctx.moveTo(-8, cy + 4);
-        ctx.lineTo(0, cy - 2);
-        ctx.lineTo(8, cy + 4);
-        ctx.stroke();
-      }
-      ctx.restore();
-      return;
-    }
-    // flying wooden arrow
-    const flyP = (o.phase - ARROW_WARN) / ARROW_FLY;
-    const sy = (H + 20) + (-H - 40) * flyP;
-    const accent = this.themeMix("accent");
-    ctx.save();
-    ctx.translate(x, sy);
-    ctx.lineJoin = "round";
-    // bright dark-background glow behind flying arrow
-    if (this.darkness > 0.3) {
-      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.55;
-      ctx.fillStyle = this.rgba(accent, glowAlpha);
-      ctx.beginPath();
-      ctx.moveTo(0, -24);
-      ctx.lineTo(11, -4);
-      ctx.lineTo(11, 18);
-      ctx.lineTo(-11, 18);
-      ctx.lineTo(-11, -4);
-      ctx.closePath();
-      ctx.fill();
-    }
-    // shaft
-    ctx.fillStyle = "#c47d4a";
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
-    this.roundedRect(-2, -10, 4, 22, 1.5);
-    ctx.fill();
-    ctx.stroke();
-    // wood grain on shaft
-    ctx.strokeStyle = "rgba(100,55,28,0.55)";
-    ctx.lineWidth = 0.75;
-    ctx.beginPath();
-    ctx.moveTo(-0.8, -8);
-    ctx.lineTo(-0.8, 8);
-    ctx.moveTo(0.8, -6);
-    ctx.lineTo(0.8, 10);
-    ctx.stroke();
-    // arrowhead — theme accent stone/metal tip
-    ctx.fillStyle = accent;
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, -20);
-    ctx.lineTo(8, -6);
-    ctx.lineTo(-8, -6);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    // highlight on tip
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.beginPath();
-    ctx.moveTo(0, -18);
-    ctx.lineTo(3, -10);
-    ctx.lineTo(-1, -10);
-    ctx.closePath();
-    ctx.fill();
-    // fletching — natural feathers
-    ctx.fillStyle = "#fff8e8";
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-2, 10);
-    ctx.lineTo(-8, 16);
-    ctx.lineTo(-2, 14);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(2, 10);
-    ctx.lineTo(8, 16);
-    ctx.lineTo(2, 14);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    // feather quill lines
-    ctx.strokeStyle = "rgba(160,130,100,0.55)";
-    ctx.lineWidth = 0.75;
-    ctx.beginPath();
-    ctx.moveTo(-2, 10);
-    ctx.lineTo(-5, 15);
-    ctx.moveTo(2, 10);
-    ctx.lineTo(5, 15);
-    ctx.stroke();
-    ctx.restore();
-  }
 
 
   private renderCoins() {
