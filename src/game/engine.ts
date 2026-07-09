@@ -1565,9 +1565,9 @@ export class Game {
     ctx.save();
     ctx.translate(x, sy);
     ctx.lineJoin = "round";
-    // dark-background glow behind flying arrow
+    // bright dark-background glow behind flying arrow
     if (this.darkness > 0.3) {
-      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
+      const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.55;
       ctx.fillStyle = this.rgba(accent, glowAlpha);
       ctx.beginPath();
       ctx.moveTo(0, -24);
@@ -1579,14 +1579,14 @@ export class Game {
       ctx.fill();
     }
     // shaft
-    ctx.fillStyle = "#8a5a2a";
+    ctx.fillStyle = "#c47d4a";
     ctx.strokeStyle = INK;
     ctx.lineWidth = 2;
     this.roundedRect(-2, -10, 4, 22, 1.5);
     ctx.fill();
     ctx.stroke();
     // wood grain on shaft
-    ctx.strokeStyle = "rgba(60,35,18,0.5)";
+    ctx.strokeStyle = "rgba(100,55,28,0.55)";
     ctx.lineWidth = 0.75;
     ctx.beginPath();
     ctx.moveTo(-0.8, -8);
@@ -1606,7 +1606,7 @@ export class Game {
     ctx.fill();
     ctx.stroke();
     // highlight on tip
-    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
     ctx.beginPath();
     ctx.moveTo(0, -18);
     ctx.lineTo(3, -10);
@@ -1614,7 +1614,7 @@ export class Game {
     ctx.closePath();
     ctx.fill();
     // fletching — natural feathers
-    ctx.fillStyle = "#e8e2d0";
+    ctx.fillStyle = "#fff8e8";
     ctx.strokeStyle = INK;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1632,7 +1632,7 @@ export class Game {
     ctx.fill();
     ctx.stroke();
     // feather quill lines
-    ctx.strokeStyle = "rgba(120,100,80,0.5)";
+    ctx.strokeStyle = "rgba(160,130,100,0.55)";
     ctx.lineWidth = 0.75;
     ctx.beginPath();
     ctx.moveTo(-2, 10);
