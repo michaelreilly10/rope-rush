@@ -1558,16 +1558,17 @@ export class Game {
       ctx.restore();
       return;
     }
-    // flying cartoon arrow
+    // flying wooden arrow
     const flyP = (o.phase - ARROW_WARN) / ARROW_FLY;
     const sy = (H + 20) + (-H - 40) * flyP;
+    const accent = this.themeMix("accent");
     ctx.save();
     ctx.translate(x, sy);
     ctx.lineJoin = "round";
     // dark-background glow behind flying arrow
     if (this.darkness > 0.3) {
       const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
-      ctx.fillStyle = `rgba(255,200,80,${glowAlpha})`;
+      ctx.fillStyle = this.rgba(accent, glowAlpha);
       ctx.beginPath();
       ctx.moveTo(0, -24);
       ctx.lineTo(11, -4);
@@ -1584,8 +1585,19 @@ export class Game {
     this.roundedRect(-2, -10, 4, 22, 1.5);
     ctx.fill();
     ctx.stroke();
-    // arrowhead
-    ctx.fillStyle = "#e8e2d0";
+    // wood grain on shaft
+    ctx.strokeStyle = "rgba(60,35,18,0.5)";
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(-0.8, -8);
+    ctx.lineTo(-0.8, 8);
+    ctx.moveTo(0.8, -6);
+    ctx.lineTo(0.8, 10);
+    ctx.stroke();
+    // arrowhead — theme accent stone/metal tip
+    ctx.fillStyle = accent;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, -20);
     ctx.lineTo(8, -6);
@@ -1593,8 +1605,18 @@ export class Game {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // fletching (bright)
-    ctx.fillStyle = "#ff5d3a";
+    // highlight on tip
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.beginPath();
+    ctx.moveTo(0, -18);
+    ctx.lineTo(3, -10);
+    ctx.lineTo(-1, -10);
+    ctx.closePath();
+    ctx.fill();
+    // fletching — natural feathers
+    ctx.fillStyle = "#e8e2d0";
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(-2, 10);
     ctx.lineTo(-8, 16);
@@ -1608,6 +1630,15 @@ export class Game {
     ctx.lineTo(2, 14);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+    // feather quill lines
+    ctx.strokeStyle = "rgba(120,100,80,0.5)";
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(-2, 10);
+    ctx.lineTo(-5, 15);
+    ctx.moveTo(2, 10);
+    ctx.lineTo(5, 15);
     ctx.stroke();
     ctx.restore();
   }
