@@ -1512,7 +1512,7 @@ export class Game {
       // dark-background glow behind warning marker
       if (this.darkness > 0.3) {
         const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
-        ctx.fillStyle = this.withAlpha(accent, glowAlpha);
+        ctx.fillStyle = this.rgba(accent, glowAlpha);
         ctx.beginPath();
         ctx.moveTo(0, -18);
         ctx.lineTo(17, 12);
