@@ -1420,7 +1420,8 @@ export class Game {
           }
           case "blade": {
             const r = 20;
-            // soft radial glow behind the blade on dark backgrounds
+            const accent = this.themeMix("accent");
+            // soft radial glow behind the wheel on dark backgrounds
             if (this.darkness > 0.3) {
               const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
               ctx.fillStyle = `rgba(255,235,160,${glowAlpha})`;
@@ -1429,26 +1430,61 @@ export class Game {
               ctx.fill();
             }
             ctx.rotate(o.phase);
-            // yellow disc with outlined gear teeth
-            ctx.fillStyle = "#ffd23f";
+            // wooden wheel disc
+            ctx.fillStyle = "#7a4a2a";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            for (let i = 0; i < 8; i++) {
-              const a = (i / 8) * Math.PI * 2;
-              const rr = i % 2 === 0 ? r : r - 6;
-              const px = Math.cos(a) * rr;
-              const py = Math.sin(a) * rr;
-              if (i === 0) ctx.moveTo(px, py);
-              else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
+            ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            // dark hub
-            ctx.fillStyle = INK;
+            // inner wood ring
+            ctx.fillStyle = "#9a6a4a";
+            ctx.beginPath();
+            ctx.arc(0, 0, r - 8, 0, Math.PI * 2);
+            ctx.fill();
+            // wood grain spokes
+            ctx.strokeStyle = "rgba(60,35,18,0.45)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for (let i = 0; i < 4; i++) {
+              const a = (i / 4) * Math.PI * 2;
+              ctx.moveTo(Math.cos(a) * 5, Math.sin(a) * 5);
+              ctx.lineTo(Math.cos(a) * (r - 10), Math.sin(a) * (r - 10));
+            }
+            ctx.stroke();
+            // metal blades bolted to the wheel
+            ctx.fillStyle = accent;
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+              const a = (i / 4) * Math.PI * 2 + Math.PI / 8;
+              ctx.save();
+              ctx.rotate(a);
+              ctx.beginPath();
+              ctx.moveTo(0, -3);
+              ctx.lineTo(r + 5, -2);
+              ctx.lineTo(r + 5, 2);
+              ctx.lineTo(0, 3);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              // bolt
+              ctx.fillStyle = "#3a2a22";
+              ctx.beginPath();
+              ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = accent;
+              ctx.restore();
+            }
+            // iron hub
+            ctx.fillStyle = "#3a2a22";
             ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "#ff5d3a";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
+            // hub pin
+            ctx.fillStyle = accent;
             ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill();
             break;
           }
