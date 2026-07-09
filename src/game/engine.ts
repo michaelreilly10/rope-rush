@@ -594,31 +594,6 @@ export class Game {
     const now = performance.now() / 1000;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      if (o.kind === "arrow") {
-        const prev = o.phase;
-        o.phase += dt;
-        // spawn small flame trail while flying
-        if (o.phase > ARROW_WARN && o.phase < ARROW_TOTAL && Math.random() < 0.9) {
-          this.spawnArrowFlame(o.side as Side, o.phase);
-        }
-        // detect crossing of ninja Y (H*0.55). Screen y goes from H+20 -> -20 over ARROW_FLY.
-        const hitP = (this.H + 20 - this.H * 0.55) / (this.H + 40);
-        const flyPrev = (prev - ARROW_WARN) / ARROW_FLY;
-        const flyNow = (o.phase - ARROW_WARN) / ARROW_FLY;
-        if (!o.hit && now > this.invulnUntil && flyPrev < hitP && flyNow >= hitP) {
-          const onSide = o.side === this.ninjaSide;
-          if (onSide) { o.hit = true; this.takeHit(); }
-        }
-        if (o.phase >= ARROW_TOTAL) {
-          if (!o.hit && !o.passed) {
-            o.passed = true;
-            this.combo++;
-            if (this.combo % 5 === 0) audio.sfx("combo");
-          }
-          o.active = false;
-        }
-        continue;
-      }
       o.phase += dt * (o.kind === "blade" ? 6 : 2);
       // off screen below (above on screen since environment scrolls up)
       if (o.y < ninjaY - 20) {
@@ -757,22 +732,6 @@ export class Game {
     p.max = 0.6;
     p.color = "#ff5a4a";
     p.size = 4;
-  }
-  private spawnArrowFlame(side: Side, phase: number) {
-    const p = this.getParticle();
-    if (!p) return;
-    const flyP = Math.max(0, Math.min(1, (phase - ARROW_WARN) / ARROW_FLY));
-    const sy = (this.H + 20) + (-this.H - 40) * flyP;
-    p.active = true;
-    p.kind = "spark";
-    p.x = this.W / 2 + side * 28 + (Math.random() - 0.5) * 6;
-    p.y = sy + 14 + Math.random() * 8;
-    p.vx = (Math.random() - 0.5) * 20;
-    p.vy = 40 + Math.random() * 40;
-    p.life = 0.35;
-    p.max = 0.35;
-    p.color = Math.random() < 0.5 ? "#ffb347" : "#ff5a1f";
-    p.size = 3 + Math.random() * 2;
   }
 
   // ---------- render ----------
@@ -1333,10 +1292,6 @@ export class Game {
     const { ctx, W } = this;
     for (const o of this.obstacles) {
       if (!o.active) continue;
-      if (o.kind === "arrow") {
-        this.renderArrow(o);
-        continue;
-      }
       const sy = this.worldToScreenY(o.y);
       if (sy < -40 || sy > this.H + 40) continue;
       const renderSide = (side: Side) => {
