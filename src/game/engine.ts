@@ -1421,17 +1421,17 @@ export class Game {
           case "blade": {
             const r = 20;
             const accent = this.themeMix("accent");
-            // soft radial glow behind the wheel on dark backgrounds
+            // bright radial glow behind the wheel on dark backgrounds
             if (this.darkness > 0.3) {
-              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.35;
-              ctx.fillStyle = `rgba(255,235,160,${glowAlpha})`;
+              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.55;
+              ctx.fillStyle = this.rgba(accent, glowAlpha);
               ctx.beginPath();
-              ctx.arc(0, 0, 26, 0, Math.PI * 2);
+              ctx.arc(0, 0, 28, 0, Math.PI * 2);
               ctx.fill();
             }
             ctx.rotate(o.phase);
             // wooden wheel disc
-            ctx.fillStyle = "#7a4a2a";
+            ctx.fillStyle = "#b06d3d";
             ctx.strokeStyle = INK;
             ctx.lineWidth = 2.5;
             ctx.beginPath();
@@ -1439,12 +1439,12 @@ export class Game {
             ctx.fill();
             ctx.stroke();
             // inner wood ring
-            ctx.fillStyle = "#9a6a4a";
+            ctx.fillStyle = "#d48c5e";
             ctx.beginPath();
             ctx.arc(0, 0, r - 8, 0, Math.PI * 2);
             ctx.fill();
             // wood grain spokes
-            ctx.strokeStyle = "rgba(60,35,18,0.45)";
+            ctx.strokeStyle = "rgba(100,55,28,0.55)";
             ctx.lineWidth = 1.5;
             ctx.beginPath();
             for (let i = 0; i < 4; i++) {
@@ -1470,7 +1470,7 @@ export class Game {
               ctx.fill();
               ctx.stroke();
               // bolt
-              ctx.fillStyle = "#3a2a22";
+              ctx.fillStyle = "#5a3a2a";
               ctx.beginPath();
               ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
               ctx.fill();
@@ -1478,14 +1478,14 @@ export class Game {
               ctx.restore();
             }
             // iron hub
-            ctx.fillStyle = "#3a2a22";
+            ctx.fillStyle = "#5a3a2a";
             ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = INK;
             ctx.lineWidth = 1.5;
             ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
             // hub pin
             ctx.fillStyle = accent;
-            ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
             break;
           }
         }
