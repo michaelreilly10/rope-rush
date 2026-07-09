@@ -1505,13 +1505,14 @@ export class Game {
       const t = o.phase / ARROW_WARN;
       const pulse = 0.55 + 0.45 * Math.abs(Math.sin(o.phase * 18));
       const wy = H - 46;
+      const accent = this.themeMix("accent");
       ctx.save();
       ctx.translate(x, wy);
       ctx.lineJoin = "round";
-      // dark-background glow behind warning
+      // dark-background glow behind warning marker
       if (this.darkness > 0.3) {
         const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.4;
-        ctx.fillStyle = `rgba(255,230,120,${glowAlpha})`;
+        ctx.fillStyle = this.withAlpha(accent, glowAlpha);
         ctx.beginPath();
         ctx.moveTo(0, -18);
         ctx.lineTo(17, 12);
@@ -1519,8 +1520,8 @@ export class Game {
         ctx.closePath();
         ctx.fill();
       }
-      // flat warning triangle
-      ctx.fillStyle = `rgba(255,210,60,${0.9 * pulse + 0.1})`;
+      // wooden warning stake
+      ctx.fillStyle = `rgba(122,74,42,${0.9 * pulse + 0.1})`;
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -1530,7 +1531,17 @@ export class Game {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = INK;
+      // wood grain on stake
+      ctx.strokeStyle = "rgba(60,35,18,0.5)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-6, 4);
+      ctx.lineTo(6, -6);
+      ctx.moveTo(-4, 8);
+      ctx.lineTo(4, 0);
+      ctx.stroke();
+      // accent crack/exclamation mark
+      ctx.fillStyle = accent;
       ctx.fillRect(-1.5, -8, 3, 10);
       ctx.fillRect(-1.5, 5, 3, 3);
       // chevrons
