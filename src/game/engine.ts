@@ -1157,49 +1157,6 @@ export class Game {
     const prev = THEMES[this.prevThemeIndex];
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars — stationary twinkling white dots. Brightness and twinkle rate
-    // are fixed and no longer tied to the background day/night intensity.
-    const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
-    if (nightAmt > 0.05) {
-      const starSeed = 1337;
-      const count = 200;
-      const now = performance.now() / 1000;
-      const baseAlpha = 0.55;
-      const twinkleAmp = 0.35;
-      const speedMul = 1.0;
-      for (let i = 0; i < count; i++) {
-        const sx = ((i * 733 + starSeed) % 10000) / 10000 * W;
-        const sy = ((i * 991 + starSeed) % 10000) / 10000 * H;
-        const size = 0.5 + ((i * 137) % 100) / 100 * 1.5;
-        const twinkleSpeed = 0.6 + ((i * 53) % 100) / 100 * 3.0;
-        const phase = ((i * 271) % 628) / 100;
-        const twinkle = 1 - twinkleAmp + twinkleAmp * Math.sin(now * twinkleSpeed * speedMul + phase);
-        ctx.globalAlpha = Math.min(1, baseAlpha * twinkle);
-        ctx.fillStyle = `rgb(255,255,255)`;
-        ctx.beginPath();
-        ctx.arc(sx, sy, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // celestial disc — sun/moon fades in/out based on adjacent themes
-    const drawDisc = (cx: number, cy: number, r: number, fill: string, isMoon: boolean) => {
-      ctx.fillStyle = fill;
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      if (isMoon) {
-        ctx.fillStyle = this.themeMix("bg");
-        ctx.beginPath();
-        ctx.arc(cx + r * 0.45, cy - r * 0.15, r * 0.85, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    };
-
     // Sky phase per theme: 0 = rising at left horizon, 0.5 = zenith,
     // 1 = setting at right horizon; outside [0,1] = below horizon (hidden).
     // Tied to each theme's night intensity so the sun/moon position tracks
@@ -1229,6 +1186,50 @@ export class Game {
 
     const sunVis = visibility(sunPhase);
     const moonVis = visibility(moonPhase);
+
+    // stars — stationary twinkling white dots. Brightness and twinkle rate
+    // are fixed, but visibility is tied to the sun disappearing so they come
+    // out as the sun goes away rather than with the background color shift.
+    const starFade = 1 - sunVis;
+    if (starFade > 0.05) {
+      const starSeed = 1337;
+      const count = 200;
+      const now = performance.now() / 1000;
+      const baseAlpha = 0.55;
+      const twinkleAmp = 0.35;
+      const speedMul = 1.0;
+      for (let i = 0; i < count; i++) {
+        const sx = ((i * 733 + starSeed) % 10000) / 10000 * W;
+        const sy = ((i * 991 + starSeed) % 10000) / 10000 * H;
+        const size = 0.5 + ((i * 137) % 100) / 100 * 1.5;
+        const twinkleSpeed = 0.6 + ((i * 53) % 100) / 100 * 3.0;
+        const phase = ((i * 271) % 628) / 100;
+        const twinkle = 1 - twinkleAmp + twinkleAmp * Math.sin(now * twinkleSpeed * speedMul + phase);
+        ctx.globalAlpha = Math.min(1, baseAlpha * twinkle * starFade);
+        ctx.fillStyle = `rgb(255,255,255)`;
+        ctx.beginPath();
+        ctx.arc(sx, sy, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // celestial disc — sun/moon fades in/out based on adjacent themes
+    const drawDisc = (cx: number, cy: number, r: number, fill: string, isMoon: boolean) => {
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      if (isMoon) {
+        ctx.fillStyle = this.themeMix("bg");
+        ctx.beginPath();
+        ctx.arc(cx + r * 0.45, cy - r * 0.15, r * 0.85, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
 
     if (sunVis > 0.02) {
       const p = phaseToPos(sunPhase);
