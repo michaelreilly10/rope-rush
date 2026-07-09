@@ -1157,16 +1157,16 @@ export class Game {
     const prev = THEMES[this.prevThemeIndex];
     const mix = (a: number, b: number) => a * (1 - this.themeT) + b * this.themeT;
 
-    // stars — stationary twinkling white dots synced to day/night intensity.
-    // Brighter base opacity and faster, deeper twinkles as nightAmt rises.
+    // stars — stationary twinkling white dots. Brightness and twinkle rate
+    // are fixed and no longer tied to the background day/night intensity.
     const nightAmt = mix(prev.night ?? 0, cur.night ?? 0);
     if (nightAmt > 0.05) {
       const starSeed = 1337;
       const count = 200;
       const now = performance.now() / 1000;
-      const baseAlpha = nightAmt * 0.55;
-      const twinkleAmp = 0.15 + 0.35 * nightAmt; // 0.15 (dusk) .. 0.5 (full night)
-      const speedMul = 0.5 + 1.5 * nightAmt;     // 0.5x (dusk) .. 2x (full night)
+      const baseAlpha = 0.55;
+      const twinkleAmp = 0.35;
+      const speedMul = 1.0;
       for (let i = 0; i < count; i++) {
         const sx = ((i * 733 + starSeed) % 10000) / 10000 * W;
         const sy = ((i * 991 + starSeed) % 10000) / 10000 * H;
