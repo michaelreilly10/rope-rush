@@ -1310,145 +1310,102 @@ export class Game {
         ctx.save();
         ctx.translate(x, sy);
         ctx.lineJoin = "round";
+        // Signal palette: guaranteed high contrast on any theme.
+        const dark = this.darkness > 0.45;
+        const core = dark ? "#f7faff" : "#1a1a24";
+        const coreEdge = dark ? "#c9d4e8" : "#000010";
+        const glow = dark ? "rgba(120,220,255,0.85)" : "rgba(255,240,180,0.9)";
+        const glowSoft = dark ? "rgba(120,220,255,0.25)" : "rgba(255,220,120,0.35)";
         switch (o.kind) {
           case "spike": {
-            const accent = this.themeMix("accent");
-            // dark-background rim around the wooden stake
-            if (this.darkness > 0.3) {
-              const rimAlpha = ((this.darkness - 0.3) / 0.7) * 0.7;
-              ctx.strokeStyle = `rgba(255,250,220,${rimAlpha})`;
-              ctx.lineWidth = 5;
-              ctx.beginPath();
-              ctx.moveTo(side * -16, 0);
-              ctx.lineTo(side * 16, -12);
-              ctx.lineTo(side * 16, 12);
-              ctx.closePath();
-              ctx.stroke();
-            }
-            // wooden stake body
-            ctx.fillStyle = "#c47d4a";
-            ctx.strokeStyle = INK;
+            // Smooth crystal shard pointing inward toward rope center.
+            const tipX = side * -16;
+            const midX = side * 10;
+            const baseX = side * 18;
+            // outer soft halo
+            ctx.strokeStyle = glowSoft;
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(tipX, 0);
+            ctx.lineTo(midX, -11);
+            ctx.lineTo(baseX, 0);
+            ctx.lineTo(midX, 11);
+            ctx.closePath();
+            ctx.stroke();
+            // crisp glow ring
+            ctx.strokeStyle = glow;
             ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.moveTo(side * -14, 0);
-            ctx.lineTo(side * 14, -10);
-            ctx.lineTo(side * 14, 10);
-            ctx.closePath();
-            ctx.fill();
             ctx.stroke();
-            // shadow side
-            ctx.fillStyle = "#8a4a2a";
+            // filled body with vertical gradient for smooth depth
+            const grad = ctx.createLinearGradient(tipX, 0, baseX, 0);
+            grad.addColorStop(0, core);
+            grad.addColorStop(1, coreEdge);
+            ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.moveTo(side * -14, 0);
-            ctx.lineTo(side * 14, -10);
-            ctx.lineTo(side * 8, -2);
-            ctx.lineTo(side * -6, 2);
+            ctx.moveTo(tipX, 0);
+            ctx.lineTo(midX, -11);
+            ctx.lineTo(baseX, 0);
+            ctx.lineTo(midX, 11);
             ctx.closePath();
             ctx.fill();
-            // wood grain lines
-            ctx.strokeStyle = "rgba(90,50,25,0.55)";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(side * -8, 0);
-            ctx.lineTo(side * 4, -6);
-            ctx.moveTo(side * -6, 3);
-            ctx.lineTo(side * 6, -4);
-            ctx.moveTo(side * -4, 6);
-            ctx.lineTo(side * 8, 1);
-            ctx.stroke();
-            // sharpened tip — theme accent for the hazard read
-            ctx.fillStyle = accent;
-            ctx.beginPath();
-            ctx.moveTo(side * -14, 0);
-            ctx.lineTo(side * 2, -5);
-            ctx.lineTo(side * 2, 5);
-            ctx.closePath();
-            ctx.fill();
-            // bright tip edge
-            ctx.fillStyle = "rgba(255,255,255,0.45)";
-            ctx.beginPath();
-            ctx.moveTo(side * -12, 0);
-            ctx.lineTo(side * -2, -2);
-            ctx.lineTo(side * -2, 1);
-            ctx.closePath();
-            ctx.fill();
-            // iron band at base
-            ctx.fillStyle = "#5a3a2a";
+            // ink outline for crisp silhouette
             ctx.strokeStyle = INK;
             ctx.lineWidth = 1.5;
-            this.roundedRect(side * 10 - 4, -10, 8, 20, 2);
-            ctx.fill();
             ctx.stroke();
+            // slim tip highlight
+            ctx.fillStyle = dark ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.55)";
+            ctx.beginPath();
+            ctx.moveTo(tipX, 0);
+            ctx.lineTo(side * -6, -3.5);
+            ctx.lineTo(side * -6, 3.5);
+            ctx.closePath();
+            ctx.fill();
             break;
           }
           case "blade": {
             const r = 20;
-            const accent = this.themeMix("accent");
-            // bright radial glow behind the wheel on dark backgrounds
-            if (this.darkness > 0.3) {
-              const glowAlpha = ((this.darkness - 0.3) / 0.7) * 0.55;
-              ctx.fillStyle = this.rgba(accent, glowAlpha);
-              ctx.beginPath();
-              ctx.arc(0, 0, 28, 0, Math.PI * 2);
-              ctx.fill();
-            }
+            // outer halo
+            ctx.fillStyle = glowSoft;
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 8, 0, Math.PI * 2);
+            ctx.fill();
             ctx.rotate(o.phase);
-            // wooden wheel disc
-            ctx.fillStyle = "#b06d3d";
-            ctx.strokeStyle = INK;
-            ctx.lineWidth = 2.5;
+            // smooth toothed disc via 6 rounded teeth
+            const teeth = 6;
+            const rTip = r + 4;
+            const rValley = r - 2;
             ctx.beginPath();
-            ctx.arc(0, 0, r - 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            // inner wood ring
-            ctx.fillStyle = "#d48c5e";
-            ctx.beginPath();
-            ctx.arc(0, 0, r - 8, 0, Math.PI * 2);
-            ctx.fill();
-            // wood grain spokes
-            ctx.strokeStyle = "rgba(100,55,28,0.55)";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            for (let i = 0; i < 4; i++) {
-              const a = (i / 4) * Math.PI * 2;
-              ctx.moveTo(Math.cos(a) * 5, Math.sin(a) * 5);
-              ctx.lineTo(Math.cos(a) * (r - 10), Math.sin(a) * (r - 10));
+            for (let i = 0; i < teeth; i++) {
+              const a0 = (i / teeth) * Math.PI * 2;
+              const a1 = ((i + 0.5) / teeth) * Math.PI * 2;
+              const a2 = ((i + 1) / teeth) * Math.PI * 2;
+              const v0x = Math.cos(a0) * rValley, v0y = Math.sin(a0) * rValley;
+              const tx = Math.cos(a1) * rTip, ty = Math.sin(a1) * rTip;
+              const v2x = Math.cos(a2) * rValley, v2y = Math.sin(a2) * rValley;
+              if (i === 0) ctx.moveTo(v0x, v0y);
+              ctx.quadraticCurveTo(tx, ty, v2x, v2y);
             }
+            ctx.closePath();
+            // glow stroke
+            ctx.strokeStyle = glow;
+            ctx.lineWidth = 3;
             ctx.stroke();
-            // metal blades bolted to the wheel
-            ctx.fillStyle = accent;
-            ctx.strokeStyle = INK;
-            ctx.lineWidth = 2;
-            for (let i = 0; i < 4; i++) {
-              const a = (i / 4) * Math.PI * 2 + Math.PI / 8;
-              ctx.save();
-              ctx.rotate(a);
-              ctx.beginPath();
-              ctx.moveTo(0, -3);
-              ctx.lineTo(r + 5, -2);
-              ctx.lineTo(r + 5, 2);
-              ctx.lineTo(0, 3);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
-              // bolt
-              ctx.fillStyle = "#5a3a2a";
-              ctx.beginPath();
-              ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.fillStyle = accent;
-              ctx.restore();
-            }
-            // iron hub
-            ctx.fillStyle = "#5a3a2a";
-            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+            // radial fill: light center → darker rim
+            const rgrad = ctx.createRadialGradient(0, 0, 2, 0, 0, rTip);
+            rgrad.addColorStop(0, core);
+            rgrad.addColorStop(1, coreEdge);
+            ctx.fillStyle = rgrad;
+            ctx.fill();
+            // ink silhouette
             ctx.strokeStyle = INK;
             ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
-            // hub pin
-            ctx.fillStyle = accent;
+            ctx.stroke();
+            // hub
+            ctx.fillStyle = glow;
             ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.stroke();
             break;
           }
         }
