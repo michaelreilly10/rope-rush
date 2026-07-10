@@ -1365,7 +1365,7 @@ export class Game {
             ctx.lineWidth = 1.5;
             ctx.stroke();
             // slim tip highlight
-            ctx.fillStyle = dark ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.55)";
+            ctx.fillStyle = `rgba(255,255,255,${(0.55 + 0.3 * t).toFixed(3)})`;
             ctx.beginPath();
             ctx.moveTo(tipX, 0);
             ctx.lineTo(side * -6, -3.5);
