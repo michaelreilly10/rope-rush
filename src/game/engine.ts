@@ -20,8 +20,8 @@ const MAX_COINS = 48;
 const MAX_PARTICLES = 160;
 
 const BASE_SPEED = 6; // m/s
-const MAX_SPEED = 28;
-const SPEED_ACCEL = 0.18; // per second
+const MAX_SPEED = 32;
+const SPEED_ACCEL = 0.28; // per second
 
 const INK = "#0d0a08";
 
@@ -211,18 +211,19 @@ function resetPct(score: number) {
 
 
 function bandKinds(score: number): ObstacleKind[] {
-  if (score < 300) return ["spike"];
-  if (score < 600) return ["spike", "blade"];
-  return ["spike", "spike", "blade", "blade"];
+  if (score < 200) return ["spike"];
+  if (score < 450) return ["spike", "spike", "blade"];
+  if (score < 900) return ["spike", "blade", "blade"];
+  return ["spike", "blade", "blade", "blade"];
 }
 
 
 function bandSpawnGap(score: number, speed: number): number {
   // Vertical meters between obstacles. Tighter as score grows, but always
   // scaled so the player has time to react at any speed.
-  const reactionWindow = 0.9; // seconds player gets at minimum
+  const reactionWindow = 0.75; // seconds player gets at minimum
   const minBySpeed = speed * reactionWindow;
-  const base = score < 300 ? 8 : score < 800 ? 6.5 : score < 1500 ? 5.5 : score < 2500 ? 5 : 4.5;
+  const base = score < 300 ? 6.5 : score < 800 ? 5 : score < 1500 ? 4.2 : score < 2500 ? 3.6 : 3.2;
   return Math.max(minBySpeed, base);
 }
 
@@ -259,6 +260,8 @@ export class Game {
   prevThemeIndex = 0;
   private themeBandIndex = 0; // last consumed band integer
   private darkness = 0; // 0..1 background darkness for contrast boosts
+  private lastSpawnSide: Side = 1;
+  private sameSideStreak = 0;
   canContinue = true; // one ad continue per run
 
   // pools
@@ -361,6 +364,8 @@ export class Game {
     this.ninjaSpin = 0;
     this.gripPose = 0;
     this.nextSpawnY = 18;
+    this.lastSpawnSide = 1;
+    this.sameSideStreak = 0;
     this.nextCoinY = 12;
     this.themeIndex = 0;
     this.prevThemeIndex = 0;
@@ -563,8 +568,17 @@ export class Game {
     if (!o) return;
     const kinds = bandKinds(this.worldY);
     const kind = kinds[(Math.random() * kinds.length) | 0];
-    // Always pick a single side so the player can always dodge
-    const side: Side = Math.random() < 0.5 ? -1 : 1;
+    // Same-side clustering: probability ramps with score, capped at 3 in a row
+    const clusterP = Math.min(0.55, this.worldY / 3000);
+    let side: Side;
+    if (this.sameSideStreak < 3 && Math.random() < clusterP) {
+      side = this.lastSpawnSide;
+      this.sameSideStreak += 1;
+    } else {
+      side = Math.random() < 0.5 ? -1 : 1;
+      this.sameSideStreak = side === this.lastSpawnSide ? this.sameSideStreak + 1 : 1;
+    }
+    this.lastSpawnSide = side;
     o.active = true;
     o.kind = kind;
     o.y = y;
