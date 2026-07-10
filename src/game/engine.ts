@@ -1316,6 +1316,9 @@ export class Game {
         const coreEdge = dark ? "#c9d4e8" : "#000010";
         const glow = dark ? "rgba(120,220,255,0.85)" : "rgba(255,240,180,0.9)";
         const glowSoft = dark ? "rgba(120,220,255,0.25)" : "rgba(255,220,120,0.35)";
+        // Contrast rim: always opposite of background luminance so silhouettes
+        // stay legible during camera shake and fast scrolling.
+        const rim = dark ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.75)";
         switch (o.kind) {
           case "spike": {
             // Smooth crystal shard pointing inward toward rope center.
