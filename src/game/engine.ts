@@ -260,6 +260,8 @@ export class Game {
   prevThemeIndex = 0;
   private themeBandIndex = 0; // last consumed band integer
   private darkness = 0; // 0..1 background darkness for contrast boosts
+  private lastSpawnSide: Side = 1;
+  private sameSideStreak = 0;
   canContinue = true; // one ad continue per run
 
   // pools
