@@ -1325,15 +1325,19 @@ export class Game {
             const tipX = side * -16;
             const midX = side * 10;
             const baseX = side * 18;
-            // outer soft halo
-            ctx.strokeStyle = glowSoft;
-            ctx.lineWidth = 6;
+            // outer contrast rim (widest) — silhouette stays visible on any bg
+            ctx.strokeStyle = rim;
+            ctx.lineWidth = 4.5;
             ctx.beginPath();
             ctx.moveTo(tipX, 0);
             ctx.lineTo(midX, -11);
             ctx.lineTo(baseX, 0);
             ctx.lineTo(midX, 11);
             ctx.closePath();
+            ctx.stroke();
+            // outer soft halo
+            ctx.strokeStyle = glowSoft;
+            ctx.lineWidth = 6;
             ctx.stroke();
             // crisp glow ring
             ctx.strokeStyle = glow;
