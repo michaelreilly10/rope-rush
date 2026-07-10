@@ -568,8 +568,17 @@ export class Game {
     if (!o) return;
     const kinds = bandKinds(this.worldY);
     const kind = kinds[(Math.random() * kinds.length) | 0];
-    // Always pick a single side so the player can always dodge
-    const side: Side = Math.random() < 0.5 ? -1 : 1;
+    // Same-side clustering: probability ramps with score, capped at 3 in a row
+    const clusterP = Math.min(0.55, this.worldY / 3000);
+    let side: Side;
+    if (this.sameSideStreak < 3 && Math.random() < clusterP) {
+      side = this.lastSpawnSide;
+      this.sameSideStreak += 1;
+    } else {
+      side = Math.random() < 0.5 ? -1 : 1;
+      this.sameSideStreak = side === this.lastSpawnSide ? this.sameSideStreak + 1 : 1;
+    }
+    this.lastSpawnSide = side;
     o.active = true;
     o.kind = kind;
     o.y = y;
