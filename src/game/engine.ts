@@ -211,18 +211,19 @@ function resetPct(score: number) {
 
 
 function bandKinds(score: number): ObstacleKind[] {
-  if (score < 300) return ["spike"];
-  if (score < 600) return ["spike", "blade"];
-  return ["spike", "spike", "blade", "blade"];
+  if (score < 200) return ["spike"];
+  if (score < 450) return ["spike", "spike", "blade"];
+  if (score < 900) return ["spike", "blade", "blade"];
+  return ["spike", "blade", "blade", "blade"];
 }
 
 
 function bandSpawnGap(score: number, speed: number): number {
   // Vertical meters between obstacles. Tighter as score grows, but always
   // scaled so the player has time to react at any speed.
-  const reactionWindow = 0.9; // seconds player gets at minimum
+  const reactionWindow = 0.75; // seconds player gets at minimum
   const minBySpeed = speed * reactionWindow;
-  const base = score < 300 ? 8 : score < 800 ? 6.5 : score < 1500 ? 5.5 : score < 2500 ? 5 : 4.5;
+  const base = score < 300 ? 6.5 : score < 800 ? 5 : score < 1500 ? 4.2 : score < 2500 ? 3.6 : 3.2;
   return Math.max(minBySpeed, base);
 }
 
