@@ -1316,21 +1316,28 @@ export class Game {
         const coreEdge = dark ? "#c9d4e8" : "#000010";
         const glow = dark ? "rgba(120,220,255,0.85)" : "rgba(255,240,180,0.9)";
         const glowSoft = dark ? "rgba(120,220,255,0.25)" : "rgba(255,220,120,0.35)";
+        // Contrast rim: always opposite of background luminance so silhouettes
+        // stay legible during camera shake and fast scrolling.
+        const rim = dark ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.75)";
         switch (o.kind) {
           case "spike": {
             // Smooth crystal shard pointing inward toward rope center.
             const tipX = side * -16;
             const midX = side * 10;
             const baseX = side * 18;
-            // outer soft halo
-            ctx.strokeStyle = glowSoft;
-            ctx.lineWidth = 6;
+            // outer contrast rim (widest) — silhouette stays visible on any bg
+            ctx.strokeStyle = rim;
+            ctx.lineWidth = 4.5;
             ctx.beginPath();
             ctx.moveTo(tipX, 0);
             ctx.lineTo(midX, -11);
             ctx.lineTo(baseX, 0);
             ctx.lineTo(midX, 11);
             ctx.closePath();
+            ctx.stroke();
+            // outer soft halo
+            ctx.strokeStyle = glowSoft;
+            ctx.lineWidth = 6;
             ctx.stroke();
             // crisp glow ring
             ctx.strokeStyle = glow;
@@ -1386,6 +1393,10 @@ export class Game {
               ctx.quadraticCurveTo(tx, ty, v2x, v2y);
             }
             ctx.closePath();
+            // outer contrast rim (widest) — keeps blade silhouette readable
+            ctx.strokeStyle = rim;
+            ctx.lineWidth = 5;
+            ctx.stroke();
             // glow stroke
             ctx.strokeStyle = glow;
             ctx.lineWidth = 3;
