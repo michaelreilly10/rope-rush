@@ -364,6 +364,8 @@ export class Game {
     this.ninjaSpin = 0;
     this.gripPose = 0;
     this.nextSpawnY = 18;
+    this.lastSpawnSide = 1;
+    this.sameSideStreak = 0;
     this.nextCoinY = 12;
     this.themeIndex = 0;
     this.prevThemeIndex = 0;
