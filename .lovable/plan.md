@@ -1,38 +1,43 @@
 ## Goal
-Make Rope Rush harder via faster acceleration, denser obstacles, and trickier patterns — without making it feel unfair (still guarantee a reaction window).
+Redesign spike and blade obstacles so they read as smooth, polished shapes and stay highly visible against every background (day, sunset, night, void, exotic colors).
 
-## Changes (all in `src/game/engine.ts`)
+## Approach
 
-### 1. Faster acceleration & higher top speed
-- `SPEED_ACCEL`: `0.18` → `0.28` (ramps up ~55% faster).
-- `MAX_SPEED`: `28` → `32`.
-- `BASE_SPEED`: unchanged (6) so the start still feels fair.
+Move away from the current wood/iron detail work (grain lines, bolts, small band details) toward clean, high-contrast silhouettes with a bright outer halo that works on any theme.
 
-### 2. More obstacles (denser spawn bands)
-Tighten `bandSpawnGap` thresholds and shrink the reaction window slightly:
-- `reactionWindow`: `0.9` → `0.75` seconds (still enough time to tap).
-- `base` gaps by score band:
-  - `<300`: `8` → `6.5`
-  - `<800`: `6.5` → `5`
-  - `<1500`: `5.5` → `4.2`
-  - `<2500`: `5` → `3.6`
-  - `≥2500`: `4.5` → `3.2`
+### Universal visibility system (in `src/game/engine.ts`)
+- Add a helper that picks a guaranteed-contrast "signal" color per frame based on the current background luminance:
+  - Bright backgrounds (day/sunset) → deep charcoal core with a warm white/gold rim.
+  - Dark backgrounds (night/void/exotic) → soft white core with a cyan/magenta glow rim.
+- Apply this system to both obstacle types so they always pop, replacing the current darkness-only rim boost.
 
-### 3. Trickier patterns
-Introduce blade obstacles earlier and weight them more heavily as score grows in `bandKinds`:
-- `<200`: `["spike"]`
-- `<450`: `["spike", "spike", "blade"]`
-- `<900`: `["spike", "blade", "blade"]`
-- `≥900`: `["spike", "blade", "blade", "blade"]`
+### Spikes — smooth crystal shard
+- Replace the tapered wooden stake + grain lines with a smooth 4-point crystal/shard silhouette drawn as a single filled path.
+- Add a soft inner gradient (light tip → darker base) for depth, no strokes inside.
+- Single crisp outer stroke plus a soft outer glow halo (2–3 px, alpha ~0.5) using the signal color.
+- Small elliptical shadow "socket" at the base where it meets the wall for grounding.
 
-Add same-side clustering in `spawnObstacle`: with a score-scaled probability (0 → 0.55), the newly spawned obstacle reuses the previous obstacle's side, forcing the player to hold rather than always alternate. Track `lastSpawnSide` on the `Game` class. To keep it dodgeable, cap the streak at 3 consecutive same-side spawns.
+### Blades — smooth saw disc
+- Replace the wooden wheel + individual bolts with a smooth metallic disc:
+  - Radial gradient body (light center → darker rim).
+  - 6 evenly spaced rounded teeth generated with a smooth path (quadratic curves), not sharp triangles.
+  - Single hub dot in the center, no bolt ring.
+- Spin animation preserved (existing `phase` value).
+- Outer glow halo in the signal color, scaled with darkness so it's visible on day themes too but subtle.
 
-### 4. Small safety net
-Since obstacles are tighter, keep the `minBySpeed` floor in `bandSpawnGap` so obstacles can never be closer than `speed * reactionWindow` meters apart — this preserves the "always dodgeable" guarantee at max speed.
+### Consistency polish
+- Both obstacles share the same halo thickness and stroke width so they feel like one family.
+- Keep collision math, sizes, and side positioning identical — this is purely visual.
+
+## Technical details
+- Only `renderSpike` and `renderBlade` inside `src/game/engine.ts` change, plus a small new `signalColors(theme, darkness)` helper near the existing theme utilities.
+- No changes to obstacle spawn logic, collision, physics, types, or audio.
+- No new assets or dependencies.
 
 ## Not changing
-- Lives, shield, coin behavior, visuals, audio.
-- Theme progression / void logic.
+- Spawn spacing, speed, difficulty.
+- Player, rope, clouds, stars, background.
+- Obstacle sizes and hitboxes.
 
 ## Verification
-Run `bun run build:dev`; briefly playtest via Playwright to confirm the game still starts and obstacles spawn at reasonable initial pacing.
+Run `bun run build:dev`, then Playwright screenshots on day, night, and void themes to confirm the obstacles are clearly visible on all three.
