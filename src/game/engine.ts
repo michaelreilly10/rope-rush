@@ -1310,15 +1310,20 @@ export class Game {
         ctx.save();
         ctx.translate(x, sy);
         ctx.lineJoin = "round";
-        // Signal palette: guaranteed high contrast on any theme.
-        const dark = this.darkness > 0.45;
-        const core = dark ? "#f7faff" : "#1a1a24";
-        const coreEdge = dark ? "#c9d4e8" : "#000010";
-        const glow = dark ? "rgba(120,220,255,0.85)" : "rgba(255,240,180,0.9)";
-        const glowSoft = dark ? "rgba(120,220,255,0.25)" : "rgba(255,220,120,0.35)";
-        // Contrast rim: always opposite of background luminance so silhouettes
-        // stay legible during camera shake and fast scrolling.
-        const rim = dark ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.75)";
+        // Signal palette: smoothly interpolate between light-bg and dark-bg
+        // variants so obstacle colors fade with the background instead of snapping.
+        const t = Math.max(0, Math.min(1, (this.darkness - 0.25) / 0.4));
+        const lerp = (a: number, b: number) => a + (b - a) * t;
+        const mix = (lr: number, lg: number, lb: number, dr: number, dg: number, db: number) =>
+          `rgb(${Math.round(lerp(lr, dr))},${Math.round(lerp(lg, dg))},${Math.round(lerp(lb, db))})`;
+        const mixA = (lr: number, lg: number, lb: number, la: number, dr: number, dg: number, db: number, da: number) =>
+          `rgba(${Math.round(lerp(lr, dr))},${Math.round(lerp(lg, dg))},${Math.round(lerp(lb, db))},${lerp(la, da).toFixed(3)})`;
+        const core = mix(26, 26, 36, 247, 250, 255);
+        const coreEdge = mix(0, 0, 16, 201, 212, 232);
+        const glow = mixA(255, 240, 180, 0.9, 120, 220, 255, 0.85);
+        const glowSoft = mixA(255, 220, 120, 0.35, 120, 220, 255, 0.25);
+        // Contrast rim: opposite of background luminance, also crossfaded.
+        const rim = mixA(0, 0, 0, 0.75, 255, 255, 255, 0.9);
         switch (o.kind) {
           case "spike": {
             // Smooth crystal shard pointing inward toward rope center.
