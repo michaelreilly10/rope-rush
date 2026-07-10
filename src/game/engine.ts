@@ -20,8 +20,8 @@ const MAX_COINS = 48;
 const MAX_PARTICLES = 160;
 
 const BASE_SPEED = 6; // m/s
-const MAX_SPEED = 32;
-const SPEED_ACCEL = 0.28; // per second
+const MAX_SPEED = 22;
+const SPEED_ACCEL = 0.22; // per second
 
 const INK = "#0d0a08";
 
@@ -218,13 +218,10 @@ function bandKinds(score: number): ObstacleKind[] {
 }
 
 
-function bandSpawnGap(score: number, speed: number): number {
-  // Vertical meters between obstacles. Tighter as score grows, but always
-  // scaled so the player has time to react at any speed.
-  const reactionWindow = 0.75; // seconds player gets at minimum
-  const minBySpeed = speed * reactionWindow;
-  const base = score < 300 ? 6.5 : score < 800 ? 5 : score < 1500 ? 4.2 : score < 2500 ? 3.6 : 3.2;
-  return Math.max(minBySpeed, base);
+function bandSpawnGap(_score: number, _speed: number): number {
+  // Fixed vertical spacing between obstacles. Difficulty scales purely from
+  // the player's descent speed increasing over time.
+  return 5.5;
 }
 
 interface Listener {
