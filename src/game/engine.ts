@@ -1393,6 +1393,10 @@ export class Game {
               ctx.quadraticCurveTo(tx, ty, v2x, v2y);
             }
             ctx.closePath();
+            // outer contrast rim (widest) — keeps blade silhouette readable
+            ctx.strokeStyle = rim;
+            ctx.lineWidth = 5;
+            ctx.stroke();
             // glow stroke
             ctx.strokeStyle = glow;
             ctx.lineWidth = 3;
