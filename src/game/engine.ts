@@ -20,8 +20,8 @@ const MAX_COINS = 48;
 const MAX_PARTICLES = 160;
 
 const BASE_SPEED = 6; // m/s
-const MAX_SPEED = 28;
-const SPEED_ACCEL = 0.18; // per second
+const MAX_SPEED = 32;
+const SPEED_ACCEL = 0.28; // per second
 
 const INK = "#0d0a08";
 
