@@ -212,7 +212,7 @@ export function GameOver({
         </div>
       ) : (
         <>
-          <div className="text-[10px] uppercase tracking-[0.5em] text-[#ff2e63]">GAME OVER</div>
+          <div className="text-2xl uppercase tracking-[0.3em] text-[#ff2e63]">GAME OVER</div>
           <h2
             className="mt-3 font-display text-6xl text-white"
             style={{
