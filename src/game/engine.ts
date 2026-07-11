@@ -477,7 +477,11 @@ export class Game {
     if (this.phase !== "playing") {
       // still drift particles softly so menu has petals
       this.updateParticles(dt);
-      audio.updateMusic((this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED));
+      audio.updateMusicLayers(
+        (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED),
+        0,
+        0,
+      );
       audio.updateAmbient(0);
       return;
     }
