@@ -538,11 +538,14 @@ export class Game {
       this.comboFlashLabel = null;
     }
 
-    audio.updateMusic((this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED));
     {
-      const vc = THEMES[this.themeIndex].id === "void" ? 1 : 0;
-      const vp = THEMES[this.prevThemeIndex].id === "void" ? 1 : 0;
-      audio.updateAmbient(vp * (1 - this.themeT) + vc * this.themeT);
+      const cur = THEMES[this.themeIndex];
+      const prev = THEMES[this.prevThemeIndex];
+      const speedPct = (this.speed - BASE_SPEED) / (MAX_SPEED - BASE_SPEED);
+      const themeDarkness = (prev.night ?? 0) * (1 - this.themeT) + (cur.night ?? 0) * this.themeT;
+      const voidAmt = (prev.id === "void" ? 1 : 0) * (1 - this.themeT) + (cur.id === "void" ? 1 : 0) * this.themeT;
+      audio.updateMusicLayers(speedPct, themeDarkness, voidAmt);
+      audio.updateAmbient(voidAmt);
     }
 
     // emit at ~10Hz to update HUD smoothly without thrash
