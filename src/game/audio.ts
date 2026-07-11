@@ -1,5 +1,5 @@
-// Lightweight Web Audio: synthesized sfx + a procedural music bed
-// whose intensity tracks game speed.
+// Lightweight Web Audio: synthesized sfx + a procedural layered music bed
+// whose intensity tracks game speed and background theme.
 
 type SfxName =
   | "swap"
@@ -16,7 +16,15 @@ class AudioEngine {
   private master: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private musicFilter: BiquadFilterNode | null = null;
-  private musicNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
+  private baseGain: GainNode | null = null;
+  private pulseGain: GainNode | null = null;
+  private pulseLFO: OscillatorNode | null = null;
+  private pulseLFOGain: GainNode | null = null;
+  private voidGain: GainNode | null = null;
+  private voidFilter: BiquadFilterNode | null = null;
+  private baseNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
+  private pulseNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
+  private voidNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
   private musicStarted = false;
   private duckUntil = 0;
   private ambientGain: GainNode | null = null;
@@ -56,7 +64,9 @@ class AudioEngine {
   setSfx(on: boolean) { this.sfxOn = on; }
   setMusic(on: boolean) {
     this.musicOn = on;
-    if (this.musicGain) this.musicGain.gain.value = on ? 0.18 : 0;
+    if (!this.ctx || !this.musicGain) return;
+    const t = this.ctx.currentTime;
+    this.musicGain.gain.setTargetAtTime(on ? 1 : 0, t, 0.1);
   }
 
   private blip(freq: number, dur: number, type: OscillatorType, vol = 0.2, slide = 0) {
@@ -105,38 +115,110 @@ class AudioEngine {
     if (!ctx || !this.master) return;
     this.musicStarted = true;
 
+    // Master music fader and shared filter
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = "lowpass";
     this.musicFilter.frequency.value = 600;
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    this.musicGain.gain.value = this.musicOn ? 0.18 : 0;
-
+    this.musicGain.gain.value = this.musicOn ? 1 : 0;
     this.musicFilter.connect(this.musicGain).connect(this.master);
 
-    // Pentatonic drone pad — A minor pentatonic
-    const notes = [110, 146.83, 164.81, 220, 246.94];
-    notes.forEach((f, i) => {
+    // 1. Base pad — deep pentatonic drone, always present
+    this.baseGain = ctx.createGain();
+    this.baseGain.gain.value = 0;
+    this.baseGain.connect(this.musicFilter);
+    const baseNotes = [110, 146.83, 164.81, 220, 246.94];
+    baseNotes.forEach((f, i) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.type = i % 2 === 0 ? "sine" : "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.06;
-      osc.connect(g).connect(this.musicFilter!);
+      g.gain.value = 0.05;
+      osc.connect(g).connect(this.baseGain!);
       osc.start();
-      this.musicNodes.push({ osc, gain: g });
+      this.baseNodes.push({ osc, gain: g });
+    });
+
+    // 2. Pulse layer — rhythmic arpeggio feel, fades in with speed
+    this.pulseGain = ctx.createGain();
+    this.pulseGain.gain.value = 0;
+    this.pulseGain.connect(this.musicFilter);
+    const pulseNotes = [220, 293.66, 329.63, 440, 493.88];
+    pulseNotes.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = i % 2 === 0 ? "triangle" : "square";
+      osc.frequency.value = f;
+      g.gain.value = 0.03;
+      osc.connect(g).connect(this.pulseGain!);
+      osc.start();
+      this.pulseNodes.push({ osc, gain: g });
+    });
+    this.pulseLFO = ctx.createOscillator();
+    this.pulseLFO.type = "sine";
+    this.pulseLFO.frequency.value = 2.5;
+    this.pulseLFOGain = ctx.createGain();
+    this.pulseLFOGain.gain.value = 0.4;
+    this.pulseLFO.connect(this.pulseLFOGain).connect(this.pulseGain.gain);
+    this.pulseLFO.start();
+
+    // 3. Void layer — dark sub drones, rises in the void / dark themes
+    this.voidFilter = ctx.createBiquadFilter();
+    this.voidFilter.type = "lowpass";
+    this.voidFilter.frequency.value = 450;
+    this.voidFilter.Q.value = 0.6;
+    this.voidGain = ctx.createGain();
+    this.voidGain.gain.value = 0;
+    this.voidGain.connect(this.voidFilter).connect(this.musicFilter);
+    const voidNotes = [55, 65.4, 82.5];
+    voidNotes.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = i === 0 ? "sine" : "triangle";
+      osc.frequency.value = f;
+      g.gain.value = 0.22;
+      osc.connect(g).connect(this.voidGain!);
+      osc.start();
+      this.voidNodes.push({ osc, gain: g });
     });
   }
 
-  updateMusic(speedPct: number) {
-    if (!this.musicFilter || !this.musicGain || !this.ctx) return;
-    const target = 500 + speedPct * 3500;
+  updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
+    if (!this.ctx || !this.musicFilter || !this.musicGain) return;
     const now = this.ctx.currentTime;
     const ducked = now < this.duckUntil;
-    this.musicFilter.frequency.setTargetAtTime(ducked ? 350 : target, now, 0.4);
-    const baseVol = this.musicOn ? 0.18 + speedPct * 0.1 : 0;
-    this.musicGain.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.3);
+    const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+    // Shared filter opens with speed
+    const targetFilter = 500 + speedPct * 3500;
+    this.musicFilter.frequency.setTargetAtTime(ducked ? 350 : targetFilter, now, 0.4);
+
+    // Base pad: always present, gentle lift with speed
+    const baseVol = 0.12 + speedPct * 0.04;
+    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.3);
+
+    // Pulse layer: fades in once speed is above 20%
+    const pulseThreshold = 0.2;
+    const pulseAmount = clamp01((speedPct - pulseThreshold) / (1 - pulseThreshold));
+    const pulseVol = pulseAmount * 0.12;
+    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.3);
+
+    // Pulse speed and depth also grow with speed
+    if (this.pulseLFO) this.pulseLFO.frequency.setTargetAtTime(2 + speedPct * 5, now, 0.3);
+    if (this.pulseLFOGain) this.pulseLFOGain.gain.setTargetAtTime(0.3 + speedPct * 0.45, now, 0.3);
+
+    // Void layer: rises with void amount and theme darkness
+    const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
+    const voidVol = clamp01(voidAmount) * 0.18;
+    this.voidGain?.gain.setTargetAtTime(ducked ? voidVol * 0.35 : voidVol, now, 0.5);
+    // Darken the void filter as it gets deeper
+    if (this.voidFilter) this.voidFilter.frequency.setTargetAtTime(450 - voidAmount * 200, now, 0.5);
+
+    // Master fader respects the music toggle
+    const masterVol = this.musicOn ? 1 : 0;
+    this.musicGain.gain.setTargetAtTime(ducked ? masterVol * 0.35 : masterVol, now, 0.3);
   }
 
   private startAmbient() {
