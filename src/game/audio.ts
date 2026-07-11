@@ -27,6 +27,12 @@ class AudioEngine {
   public sfxOn = true;
   public musicOn = true;
 
+  get muted() { return !this.sfxOn && !this.musicOn; }
+  setMuted(on: boolean) {
+    this.setSfx(!on);
+    this.setMusic(!on);
+  }
+
   private ensure() {
     if (this.ctx) return this.ctx;
     if (typeof window === "undefined") return null;
