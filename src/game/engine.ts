@@ -939,17 +939,22 @@ export class Game {
     const voidAmt = voidPrev * (1 - this.themeT) + voidCur * this.themeT;
     const suppressSpawn = voidAmt > 0.4;
 
+    // slow cloud spawn/drift during theme transitions so the atmosphere stays readable
+    const transitionFactor = 1 - Math.abs(this.themeT - 0.5) * 2; // 0 at theme edges, 1 at mid-transition
+    const transitionSpacingMult = 1 + transitionFactor * 0.6;
+
     for (let li = 0; li < 3; li++) {
       const cfg = configs[li];
       const drift = this.speed * cfg.speedMult;
       const layer = this.cloudLayers[li];
+      const spacing = cfg.spacing * transitionSpacingMult;
 
-      const needed = Math.ceil((H + cloudMargin * 2) / cfg.spacing) + 2;
+      const needed = Math.ceil((H + cloudMargin * 2) / spacing) + 2;
       if (!suppressSpawn) {
         while (layer.length < needed) {
           const maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
           layer.push({
-            y: maxY + cfg.spacing,
+            y: maxY + spacing,
             x: 40 + Math.random() * (this.W - 80),
             s: cfg.minS + Math.random() * (cfg.maxS - cfg.minS),
             shape: Math.floor(Math.random() * 6),
@@ -966,7 +971,7 @@ export class Game {
         let maxY = layer.length > 0 ? Math.max(...layer.map((c) => c.y)) : H + cloudMargin;
         for (const c of layer) {
           if (c.y < -cloudMargin) {
-            c.y = maxY + cfg.spacing;
+            c.y = maxY + spacing;
             maxY = c.y;
             c.x = 40 + Math.random() * (this.W - 80);
             c.s = cfg.minS + Math.random() * (cfg.maxS - cfg.minS);
