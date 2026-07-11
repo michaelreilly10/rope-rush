@@ -1,43 +1,42 @@
-## Goal
-Redesign spike and blade obstacles so they read as smooth, polished shapes and stay highly visible against every background (day, sunset, night, void, exotic colors).
+Plan: Add multiple procedural music layers to Rope Rush
 
-## Approach
+Current state: The game has one synthesized pentatonic drone pad in `src/game/audio.ts`. Its lowpass filter opens and volume rises as the player falls faster. It sounds the same regardless of background theme.
 
-Move away from the current wood/iron detail work (grain lines, bolts, small band details) toward clean, high-contrast silhouettes with a bright outer halo that works on any theme.
+Goal: Replace the single music bed with several procedural Web Audio layers that fade in/out based on speed and theme, creating a richer, evolving soundtrack.
 
-### Universal visibility system (in `src/game/engine.ts`)
-- Add a helper that picks a guaranteed-contrast "signal" color per frame based on the current background luminance:
-  - Bright backgrounds (day/sunset) → deep charcoal core with a warm white/gold rim.
-  - Dark backgrounds (night/void/exotic) → soft white core with a cyan/magenta glow rim.
-- Apply this system to both obstacle types so they always pop, replacing the current darkness-only rim boost.
+What I'll build
 
-### Spikes — smooth crystal shard
-- Replace the tapered wooden stake + grain lines with a smooth 4-point crystal/shard silhouette drawn as a single filled path.
-- Add a soft inner gradient (light tip → darker base) for depth, no strokes inside.
-- Single crisp outer stroke plus a soft outer glow halo (2–3 px, alpha ~0.5) using the signal color.
-- Small elliptical shadow "socket" at the base where it meets the wall for grounding.
+1. Layered music architecture in `src/game/audio.ts`
+   - Define 3 simultaneous procedural layers:
+     - Base pad: A slower, deeper drone (similar to the current pentatonic bed) that is always audible when music is on.
+     - Pulse layer: A subtle rhythmic pulse/arp that fades in as speed increases, adding tension during fast falls.
+     - Void layer: A dark, sparse ambient layer that fades in during the "void" and late-night themes, complementing the existing void ambient SFX.
+   - Each layer gets its own `GainNode` and its own small oscillator/buffer set so volume can be crossfaded independently.
 
-### Blades — smooth saw disc
-- Replace the wooden wheel + individual bolts with a smooth metallic disc:
-  - Radial gradient body (light center → darker rim).
-  - 6 evenly spaced rounded teeth generated with a smooth path (quadratic curves), not sharp triangles.
-  - Single hub dot in the center, no bolt ring.
-- Spin animation preserved (existing `phase` value).
-- Outer glow halo in the signal color, scaled with darkness so it's visible on day themes too but subtle.
+2. Dynamic mixing
+   - Introduce one new method: `updateMusicLayers(speedPct, themeDarkness, voidAmt)`.
+   - Base pad stays at a moderate level throughout.
+   - Pulse layer gain rises from 0 to full as `speedPct` goes from 0.2 to 1.0.
+   - Void layer gain rises as `voidAmt` increases and also blends with background darkness.
+   - Keep the existing `musicOn` / `setMusic` / `setMuted` behavior intact; all layers respect the same mute toggles.
 
-### Consistency polish
-- Both obstacles share the same halo thickness and stroke width so they feel like one family.
-- Keep collision math, sizes, and side positioning identical — this is purely visual.
+3. Hook it into the game loop
+   - In `src/game/engine.ts`, replace the existing `audio.updateMusic(...)` call with `audio.updateMusicLayers(...)` and pass:
+     - speed ratio
+     - current theme's darkness value
+     - computed void amount
+   - Keep the existing SFX and ambient void drone code unchanged.
 
-## Technical details
-- Only `renderSpike` and `renderBlade` inside `src/game/engine.ts` change, plus a small new `signalColors(theme, darkness)` helper near the existing theme utilities.
-- No changes to obstacle spawn logic, collision, physics, types, or audio.
-- No new assets or dependencies.
+4. Verify
+   - Test the game in the preview: music should start on the menu, remain a calm drone at low speed, grow more energetic as speed increases, and turn darker in the void.
+   - Confirm muting from the pause overlay and settings panel still silences all layers.
 
-## Not changing
-- Spawn spacing, speed, difficulty.
-- Player, rope, clouds, stars, background.
-- Obstacle sizes and hitboxes.
+Technical notes
+- No external audio files or CDN assets will be used; everything stays generated via Web Audio API to keep the project lightweight and avoid binary assets.
+- The existing `AudioEngine` class remains the single owner of music state; settings in `storage.ts` and toggles in `SettingsPanel`/`PauseOverlay` work without changes.
 
-## Verification
-Run `bun run build:dev`, then Playwright screenshots on day, night, and void themes to confirm the obstacles are clearly visible on all three.
+Files to modify
+- `src/game/audio.ts` — add layer oscillators, gains, and `updateMusicLayers`.
+- `src/game/engine.ts` — call the new mixer with speed + theme data.
+
+No new dependencies or backend changes needed.
