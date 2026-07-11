@@ -107,6 +107,12 @@ export function RopeRush() {
             <PauseOverlay
               onResume={() => game.resumePlay()}
               onMenu={() => { game.endRun(); beginRun(); }}
+              muted={!game.save.settings.sfx && !game.save.settings.music}
+              onToggleMute={() => {
+                const target = !(!game.save.settings.sfx && !game.save.settings.music);
+                game.setSetting("sfx", !target);
+                game.setSetting("music", !target);
+              }}
             />
           )}
           {hud.phase === "gameover" && (
