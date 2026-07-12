@@ -6,6 +6,7 @@ import { GameOver } from "./ui/GameOver";
 import { PauseOverlay } from "./ui/PauseOverlay";
 import { Leaderboard } from "./ui/Leaderboard";
 import { startGameSession } from "@/lib/leaderboard.api";
+import { initRewardedAds, preloadRewardedAd } from "./rewardedAd";
 
 
 export function RopeRush() {
