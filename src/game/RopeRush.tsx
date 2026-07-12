@@ -38,6 +38,7 @@ export function RopeRush() {
     const unsub = game.subscribe(setHud);
     const onResize = () => game.resize();
     window.addEventListener("resize", onResize);
+    initRewardedAds().catch(() => {});
     // Stay on menu until first tap.
 
     return () => {
