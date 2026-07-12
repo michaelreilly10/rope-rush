@@ -6,6 +6,7 @@ import { GameOver } from "./ui/GameOver";
 import { PauseOverlay } from "./ui/PauseOverlay";
 import { Leaderboard } from "./ui/Leaderboard";
 import { startGameSession } from "@/lib/leaderboard.api";
+import { initRewardedAds, preloadRewardedAd } from "./rewardedAd";
 
 
 export function RopeRush() {
@@ -23,6 +24,7 @@ export function RopeRush() {
     startGameSession()
       .then((res) => setSessionToken(res.token))
       .catch(() => setSessionToken(null));
+    preloadRewardedAd().catch(() => {});
     g.startRun();
   }, []);
 
@@ -36,6 +38,7 @@ export function RopeRush() {
     const unsub = game.subscribe(setHud);
     const onResize = () => game.resize();
     window.addEventListener("resize", onResize);
+    initRewardedAds().catch(() => {});
     // Stay on menu until first tap.
 
     return () => {
