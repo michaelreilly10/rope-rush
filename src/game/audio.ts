@@ -222,7 +222,7 @@ class AudioEngine {
 
     // Void layer: rises with void amount and theme darkness
     const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
-    const voidVol = clamp01(voidAmount) * 0.18;
+    const voidVol = clamp01(voidAmount) * 0.10;
     this.voidGain?.gain.setTargetAtTime(ducked ? voidVol * 0.35 : voidVol, now, 0.5);
     // Darken the void filter as it gets deeper
     if (this.voidFilter) this.voidFilter.frequency.setTargetAtTime(450 - voidAmount * 200, now, 0.5);
@@ -287,7 +287,7 @@ class AudioEngine {
     if (voidAmt > 0.01 && !this.ambientStarted) this.startAmbient();
     if (!this.ambientGain) return;
     const amt = Math.max(0, Math.min(1, voidAmt));
-    const target = amt * 0.22;
+    const target = amt * 0.12;
     this.ambientGain.gain.setTargetAtTime(target, ctx.currentTime, 0.6);
   }
 }
