@@ -24,10 +24,7 @@ async function main() {
   // Vite emits absolute paths like /assets/...; the Capacitor shell is served
   // from a file:// or capacitor:// origin, so we need relative paths.
   // Replace every absolute /assets/ reference (HTML attributes, JS strings, etc.).
-  html = html.replace(/(=\s*["']?)\/assets\//g, "$1assets/");
-
-  // Remove any base path that assumes the site is served from /.
-  html = html.replace(/(=\s*["']?)\//g, "$1./");
+  html = html.replace(/\/assets\//g, "assets/");
 
   fs.rmSync(OUTPUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
