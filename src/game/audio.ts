@@ -122,8 +122,15 @@ class AudioEngine {
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    this.musicGain.gain.value = this.musicOn ? 1 : 0;
+    // Fade in gently from silence so the music eases in at the start of a run
+    this.musicGain.gain.value = 0;
+    if (this.musicOn) {
+      const t0 = ctx.currentTime;
+      this.musicGain.gain.setValueAtTime(0, t0);
+      this.musicGain.gain.linearRampToValueAtTime(1, t0 + 3.0);
+    }
     this.musicFilter.connect(this.musicGain).connect(this.master);
+
 
     // 1. Base pad — deep pentatonic drone, always present
     this.baseGain = ctx.createGain();
