@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { getTopScores, type LeaderboardEntry } from "@/lib/leaderboard.functions";
+import { getTopScores, type LeaderboardEntry } from "@/lib/leaderboard.api";
 
 const MY_SCORES_KEY = "rr.myScores";
 
@@ -24,7 +23,6 @@ export function Leaderboard({
   onClose: () => void;
   highlightId?: string | null;
 }) {
-  const fetchTop = useServerFn(getTopScores);
   const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [myIds, setMyIds] = useState<Set<string>>(new Set());
@@ -35,7 +33,7 @@ export function Leaderboard({
     setEntries(null);
     setErr(null);
     setMyIds(readMyScoreIds());
-    fetchTop()
+    getTopScores()
       .then((res) => {
         if (!cancelled) setEntries(res.entries);
       })
@@ -45,7 +43,7 @@ export function Leaderboard({
     return () => {
       cancelled = true;
     };
-  }, [open, fetchTop]);
+  }, [open]);
 
   if (!open) return null;
 

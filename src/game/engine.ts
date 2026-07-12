@@ -1,5 +1,6 @@
 import { audio } from "./audio";
 import { findChar, findRope, findTrail } from "./cosmetics";
+import { hapticHit, hapticSwap } from "./haptics";
 import { loadSave, saveSave, type SaveData } from "./storage";
 import type {
   Coin,
@@ -391,7 +392,7 @@ export class Game {
     this.spinDir = this.ninjaSide;
     audio.sfx("swap");
     this.spawnSwapPuff();
-    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.(12);
+    if (this.save.settings.haptics) hapticSwap();
   }
 
   continueWithAd() {
@@ -676,7 +677,7 @@ export class Game {
     this.speed = Math.max(BASE_SPEED, MAX_SPEED * resetPct(this.worldY));
     // hit burst
     for (let i = 0; i < 14; i++) this.emitHit();
-    if (this.save.settings.haptics && "vibrate" in navigator) navigator.vibrate?.([40, 40, 60, 40, 80]);
+    if (this.save.settings.haptics) hapticHit();
     if (this.lives <= 0) this.endRun();
   }
 

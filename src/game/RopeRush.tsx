@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Game } from "./engine";
 import type { HUDState } from "./types";
 import { HUD } from "./ui/HUD";
 import { GameOver } from "./ui/GameOver";
 import { PauseOverlay } from "./ui/PauseOverlay";
 import { Leaderboard } from "./ui/Leaderboard";
-import { startGameSession } from "@/lib/leaderboard.functions";
+import { startGameSession } from "@/lib/leaderboard.api";
 
 
 export function RopeRush() {
@@ -16,17 +15,16 @@ export function RopeRush() {
   const [lbOpen, setLbOpen] = useState(false);
   const [lbHighlight, setLbHighlight] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const startSession = useServerFn(startGameSession);
 
   const beginRun = useCallback(() => {
     const g = gameRef.current;
     if (!g) return;
     setSessionToken(null);
-    startSession()
+    startGameSession()
       .then((res) => setSessionToken(res.token))
       .catch(() => setSessionToken(null));
     g.startRun();
-  }, [startSession]);
+  }, []);
 
 
   useEffect(() => {

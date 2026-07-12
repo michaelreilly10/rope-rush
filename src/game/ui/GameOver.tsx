@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import type { HUDState } from "../types";
-import { submitScore, deleteScoreForContinue } from "@/lib/leaderboard.functions";
+import { submitScore, deleteScoreForContinue } from "@/lib/leaderboard.api";
 
 
 const NAME_KEY = "rr.playerName";
@@ -84,8 +83,7 @@ export function GameOver({
 }) {
   const [showAd, setShowAd] = useState(false);
   const [adProgress, setAdProgress] = useState(0);
-  const submit = useServerFn(submitScore);
-  const deleteScore = useServerFn(deleteScoreForContinue);
+  // Direct fetch calls work both in the browser and inside the iOS WebView.
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +105,7 @@ export function GameOver({
         if (hud.score >= 1 && status === "idle") {
           setStatus("submitting");
           markTokenSubmitted(sessionToken);
-          submit({ data: { name: saved, score: hud.score, token: sessionToken } })
+          submitScore({ name: saved, score: hud.score, token: sessionToken })
             .then((res) => {
               if (res.ok) {
                 addMyScoreId(res.id);
@@ -139,7 +137,7 @@ export function GameOver({
     const tokenAtStart = sessionToken;
     if (idToRemove && tokenAtStart) {
       removeMyScoreId(idToRemove);
-      deleteScore({ data: { id: idToRemove, token: tokenAtStart } }).catch(() => {});
+      deleteScoreForContinue({ id: idToRemove, token: tokenAtStart }).catch(() => {});
       setSubmittedId(null);
     }
     if (tokenAtStart) unmarkTokenSubmitted(tokenAtStart);
@@ -179,7 +177,7 @@ export function GameOver({
     setError(null);
     markTokenSubmitted(sessionToken);
     try {
-      const res = await submit({ data: { name: trimmed, score: hud.score, token: sessionToken } });
+      const res = await submitScore({ name: trimmed, score: hud.score, token: sessionToken });
       if (res.ok) {
         try { localStorage.setItem(NAME_KEY, trimmed); } catch {}
         addMyScoreId(res.id);
