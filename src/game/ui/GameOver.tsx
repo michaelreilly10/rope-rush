@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { HUDState } from "../types";
 import { submitScore, deleteScoreForContinue } from "@/lib/leaderboard.api";
+import { showRewardedAd } from "../rewardedAd";
 
 
 const NAME_KEY = "rr.playerName";
