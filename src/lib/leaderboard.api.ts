@@ -1,6 +1,8 @@
 import { Capacitor } from "@capacitor/core";
 import type { LeaderboardEntry } from "./leaderboard.server";
 
+export type { LeaderboardEntry };
+
 const BASE_URL = import.meta.env.VITE_SERVER_BASE_URL ?? "";
 
 function apiUrl(path: string): string {
