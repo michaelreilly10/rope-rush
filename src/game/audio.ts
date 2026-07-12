@@ -110,10 +110,20 @@ class AudioEngine {
   }
 
   startMusic() {
-    if (this.musicStarted) return;
     const ctx = this.ensure();
     if (!ctx || !this.master) return;
+    // On repeat runs, just re-trigger the fade-in on the existing graph
+    if (this.musicStarted) {
+      if (this.musicGain && this.musicOn) {
+        const t0 = ctx.currentTime;
+        this.musicGain.gain.cancelScheduledValues(t0);
+        this.musicGain.gain.setValueAtTime(0, t0);
+        this.musicGain.gain.linearRampToValueAtTime(1, t0 + 3.0);
+      }
+      return;
+    }
     this.musicStarted = true;
+
 
     // Master music fader and shared filter
     this.musicFilter = ctx.createBiquadFilter();
