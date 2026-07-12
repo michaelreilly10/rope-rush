@@ -146,17 +146,14 @@ export function GameOver({
 
     setShowAd(true);
     setAdProgress(0);
-    const start = performance.now();
-    const tick = () => {
-      const p = Math.min(1, (performance.now() - start) / 1800);
-      setAdProgress(p);
-      if (p < 1) requestAnimationFrame(tick);
-      else {
+    showRewardedAd((p) => setAdProgress(p))
+      .then((res) => {
         setShowAd(false);
-        onContinue();
-      }
-    };
-    requestAnimationFrame(tick);
+        if (res.rewarded) onContinue();
+      })
+      .catch(() => {
+        setShowAd(false);
+      });
   };
 
 
