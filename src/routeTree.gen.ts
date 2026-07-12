@@ -10,33 +10,76 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiLeaderboardStartRouteImport } from './routes/api/leaderboard.start'
+import { Route as ApiLeaderboardScoresRouteImport } from './routes/api/leaderboard.scores'
+import { Route as ApiLeaderboardContinueRouteImport } from './routes/api/leaderboard.continue'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLeaderboardStartRoute = ApiLeaderboardStartRouteImport.update({
+  id: '/api/leaderboard/start',
+  path: '/api/leaderboard/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLeaderboardScoresRoute = ApiLeaderboardScoresRouteImport.update({
+  id: '/api/leaderboard/scores',
+  path: '/api/leaderboard/scores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLeaderboardContinueRoute = ApiLeaderboardContinueRouteImport.update({
+  id: '/api/leaderboard/continue',
+  path: '/api/leaderboard/continue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/leaderboard/continue': typeof ApiLeaderboardContinueRoute
+  '/api/leaderboard/scores': typeof ApiLeaderboardScoresRoute
+  '/api/leaderboard/start': typeof ApiLeaderboardStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/leaderboard/continue': typeof ApiLeaderboardContinueRoute
+  '/api/leaderboard/scores': typeof ApiLeaderboardScoresRoute
+  '/api/leaderboard/start': typeof ApiLeaderboardStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/leaderboard/continue': typeof ApiLeaderboardContinueRoute
+  '/api/leaderboard/scores': typeof ApiLeaderboardScoresRoute
+  '/api/leaderboard/start': typeof ApiLeaderboardStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/api/leaderboard/continue'
+    | '/api/leaderboard/scores'
+    | '/api/leaderboard/start'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/api/leaderboard/continue'
+    | '/api/leaderboard/scores'
+    | '/api/leaderboard/start'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/leaderboard/continue'
+    | '/api/leaderboard/scores'
+    | '/api/leaderboard/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiLeaderboardContinueRoute: typeof ApiLeaderboardContinueRoute
+  ApiLeaderboardScoresRoute: typeof ApiLeaderboardScoresRoute
+  ApiLeaderboardStartRoute: typeof ApiLeaderboardStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +91,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/leaderboard/start': {
+      id: '/api/leaderboard/start'
+      path: '/api/leaderboard/start'
+      fullPath: '/api/leaderboard/start'
+      preLoaderRoute: typeof ApiLeaderboardStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/leaderboard/scores': {
+      id: '/api/leaderboard/scores'
+      path: '/api/leaderboard/scores'
+      fullPath: '/api/leaderboard/scores'
+      preLoaderRoute: typeof ApiLeaderboardScoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/leaderboard/continue': {
+      id: '/api/leaderboard/continue'
+      path: '/api/leaderboard/continue'
+      fullPath: '/api/leaderboard/continue'
+      preLoaderRoute: typeof ApiLeaderboardContinueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiLeaderboardContinueRoute: ApiLeaderboardContinueRoute,
+  ApiLeaderboardScoresRoute: ApiLeaderboardScoresRoute,
+  ApiLeaderboardStartRoute: ApiLeaderboardStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
