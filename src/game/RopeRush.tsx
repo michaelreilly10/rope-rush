@@ -24,6 +24,7 @@ export function RopeRush() {
     startGameSession()
       .then((res) => setSessionToken(res.token))
       .catch(() => setSessionToken(null));
+    preloadRewardedAd().catch(() => {});
     g.startRun();
   }, []);
 
