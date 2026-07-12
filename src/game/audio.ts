@@ -141,28 +141,22 @@ class AudioEngine {
       this.baseNodes.push({ osc, gain: g });
     });
 
-    // 2. Pulse layer — rhythmic arpeggio feel, fades in with speed
+    // 2. Pulse layer — smooth harmonic swell that fades in with speed (no tremolo)
     this.pulseGain = ctx.createGain();
     this.pulseGain.gain.value = 0;
     this.pulseGain.connect(this.musicFilter);
     const pulseNotes = [220, 293.66, 329.63, 440, 493.88];
-    pulseNotes.forEach((f, i) => {
+    pulseNotes.forEach((f) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
-      osc.type = i % 2 === 0 ? "triangle" : "square";
+      osc.type = "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.03;
+      g.gain.value = 0.028;
       osc.connect(g).connect(this.pulseGain!);
       osc.start();
       this.pulseNodes.push({ osc, gain: g });
     });
-    this.pulseLFO = ctx.createOscillator();
-    this.pulseLFO.type = "sine";
-    this.pulseLFO.frequency.value = 2.5;
-    this.pulseLFOGain = ctx.createGain();
-    this.pulseLFOGain.gain.value = 0.4;
-    this.pulseLFO.connect(this.pulseLFOGain).connect(this.pulseGain.gain);
-    this.pulseLFO.start();
+
 
     // 3. Void layer — dark sub drones, rises in the void / dark themes
     this.voidFilter = ctx.createBiquadFilter();
