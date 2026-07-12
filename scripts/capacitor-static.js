@@ -23,11 +23,11 @@ async function main() {
   // Make asset paths relative so they work inside the Capacitor WebView.
   // Vite emits absolute paths like /assets/...; the Capacitor shell is served
   // from a file:// or capacitor:// origin, so we need relative paths.
-  html = html.replace(/href="\/assets\//g, 'href="assets/');
-  html = html.replace(/src="\/assets\//g, 'src="assets/');
+  // Replace every absolute /assets/ reference (HTML attributes, JS strings, etc.).
+  html = html.replace(/(=\s*["']?)\/assets\//g, "$1assets/");
 
   // Remove any base path that assumes the site is served from /.
-  html = html.replace(/href="\/"/g, 'href="./"');
+  html = html.replace(/(=\s*["']?)\//g, "$1./");
 
   fs.rmSync(OUTPUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
