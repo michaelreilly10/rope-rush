@@ -11,5 +11,10 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // SPA mode: ship a static shell that Capacitor can bundle into the iOS app.
+    // Prerender is disabled because the preview server resolution conflicts with the
+    // Lovable Nitro output naming; the client SPA shell is generated directly instead.
+    spa: { enabled: true },
+    prerender: { enabled: false },
   },
 });
