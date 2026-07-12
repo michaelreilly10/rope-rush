@@ -618,7 +618,7 @@ export class Game {
         if (!o.hit && !o.passed) {
           o.passed = true;
           this.combo++;
-          if (this.combo % 5 === 0) audio.sfx("combo");
+          // combo chime removed — was audible as a periodic beep during runs
         }
         o.active = false;
         continue;
