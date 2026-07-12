@@ -191,23 +191,27 @@ class AudioEngine {
     const ducked = now < this.duckUntil;
     const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
-    // Shared filter opens with speed
-    const targetFilter = 500 + speedPct * 3500;
-    this.musicFilter.frequency.setTargetAtTime(ducked ? 350 : targetFilter, now, 0.4);
+    const s = clamp01(speedPct);
+    // Ease-in curve: calm at start, ramps hardest near max speed
+    const easeIn = s * s;
+    const easeInStrong = s * s * s;
 
-    // Base pad: always present, gentle lift with speed
-    const baseVol = 0.12 + speedPct * 0.04;
-    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.3);
+    // Shared filter: stays dark and mellow at low speed, opens dramatically near max
+    const targetFilter = 380 + easeIn * 4200;
+    this.musicFilter.frequency.setTargetAtTime(ducked ? 300 : targetFilter, now, 0.5);
 
-    // Pulse layer: fades in once speed is above 20%
-    const pulseThreshold = 0.2;
-    const pulseAmount = clamp01((speedPct - pulseThreshold) / (1 - pulseThreshold));
-    const pulseVol = pulseAmount * 0.12;
-    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.3);
+    // Base pad: quieter at start, subtle lift toward max
+    const baseVol = 0.07 + easeIn * 0.09;
+    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.4);
 
-    // Pulse speed and depth also grow with speed
-    if (this.pulseLFO) this.pulseLFO.frequency.setTargetAtTime(2 + speedPct * 5, now, 0.3);
-    if (this.pulseLFOGain) this.pulseLFOGain.gain.setTargetAtTime(0.3 + speedPct * 0.45, now, 0.3);
+    // Pulse layer: barely audible until mid-speed, peaks near max
+    const pulseAmount = easeInStrong;
+    const pulseVol = pulseAmount * 0.16;
+    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.4);
+
+    // Pulse tempo and depth ramp smoothly, feeling urgent only near the top
+    if (this.pulseLFO) this.pulseLFO.frequency.setTargetAtTime(1.4 + easeIn * 6.6, now, 0.5);
+    if (this.pulseLFOGain) this.pulseLFOGain.gain.setTargetAtTime(0.2 + easeIn * 0.6, now, 0.5);
 
     // Void layer: rises with void amount and theme darkness
     const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
