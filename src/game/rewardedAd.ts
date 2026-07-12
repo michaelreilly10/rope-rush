@@ -35,18 +35,29 @@ function resolveAdUnitId(): string {
   return "";
 }
 
-// Lazy-loaded AdMob plugin so the web build never bundles it.
-type AdMobModule = typeof import("@capacitor-community/admob");
+// Lazy-loaded AdMob plugin so the web build never bundles it. The module id
+// is assembled at runtime so TypeScript / Vite do not try to resolve it at
+// build time — the plugin is an optional native-only dependency.
+type AdMobModule = {
+  AdMob: {
+    initialize: (opts?: { initializeForTesting?: boolean }) => Promise<void>;
+    prepareRewardVideoAd: (opts: { adId: string }) => Promise<unknown>;
+    showRewardVideoAd: () => Promise<{ amount?: number; type?: string } | undefined>;
+  };
+};
 let adMobPromise: Promise<AdMobModule | null> | null = null;
 let initialized = false;
 
 async function loadAdMob(): Promise<AdMobModule | null> {
   if (!Capacitor.isNativePlatform()) return null;
   if (!adMobPromise) {
-    adMobPromise = import("@capacitor-community/admob").catch((err) => {
-      console.warn("[ads] @capacitor-community/admob not installed:", err);
-      return null;
-    });
+    const pkg = "@capacitor-community/admob";
+    adMobPromise = (import(/* @vite-ignore */ pkg) as Promise<AdMobModule>).catch(
+      (err) => {
+        console.warn("[ads] @capacitor-community/admob not installed:", err);
+        return null;
+      },
+    );
   }
   return adMobPromise;
 }
