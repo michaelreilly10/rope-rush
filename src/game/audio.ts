@@ -122,8 +122,15 @@ class AudioEngine {
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    this.musicGain.gain.value = this.musicOn ? 1 : 0;
+    // Fade in gently from silence so the music eases in at the start of a run
+    this.musicGain.gain.value = 0;
+    if (this.musicOn) {
+      const t0 = ctx.currentTime;
+      this.musicGain.gain.setValueAtTime(0, t0);
+      this.musicGain.gain.linearRampToValueAtTime(1, t0 + 3.0);
+    }
     this.musicFilter.connect(this.musicGain).connect(this.master);
+
 
     // 1. Base pad — deep pentatonic drone, always present
     this.baseGain = ctx.createGain();
@@ -141,28 +148,22 @@ class AudioEngine {
       this.baseNodes.push({ osc, gain: g });
     });
 
-    // 2. Pulse layer — rhythmic arpeggio feel, fades in with speed
+    // 2. Pulse layer — smooth harmonic swell that fades in with speed (no tremolo)
     this.pulseGain = ctx.createGain();
     this.pulseGain.gain.value = 0;
     this.pulseGain.connect(this.musicFilter);
     const pulseNotes = [220, 293.66, 329.63, 440, 493.88];
-    pulseNotes.forEach((f, i) => {
+    pulseNotes.forEach((f) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
-      osc.type = i % 2 === 0 ? "triangle" : "square";
+      osc.type = "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.03;
+      g.gain.value = 0.028;
       osc.connect(g).connect(this.pulseGain!);
       osc.start();
       this.pulseNodes.push({ osc, gain: g });
     });
-    this.pulseLFO = ctx.createOscillator();
-    this.pulseLFO.type = "sine";
-    this.pulseLFO.frequency.value = 2.5;
-    this.pulseLFOGain = ctx.createGain();
-    this.pulseLFOGain.gain.value = 0.4;
-    this.pulseLFO.connect(this.pulseLFOGain).connect(this.pulseGain.gain);
-    this.pulseLFO.start();
+
 
     // 3. Void layer — dark sub drones, rises in the void / dark themes
     this.voidFilter = ctx.createBiquadFilter();
@@ -192,26 +193,22 @@ class AudioEngine {
     const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
     const s = clamp01(speedPct);
-    // Ease-in curve: calm at start, ramps hardest near max speed
-    const easeIn = s * s;
-    const easeInStrong = s * s * s;
+    // Gentle quartic curve: very calm early, most intensity near max speed
+    const easeSlow = s * s * s * s;
+    const easeMid = s * s * s;
 
     // Shared filter: stays dark and mellow at low speed, opens dramatically near max
-    const targetFilter = 380 + easeIn * 4200;
-    this.musicFilter.frequency.setTargetAtTime(ducked ? 300 : targetFilter, now, 0.5);
+    const targetFilter = 340 + easeMid * 4400;
+    this.musicFilter.frequency.setTargetAtTime(ducked ? 300 : targetFilter, now, 0.8);
 
-    // Base pad: quieter at start, subtle lift toward max
-    const baseVol = 0.07 + easeIn * 0.09;
-    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.4);
+    // Base pad: soft at start, gradual lift
+    const baseVol = 0.05 + easeMid * 0.1;
+    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.8);
 
-    // Pulse layer: barely audible until mid-speed, peaks near max
-    const pulseAmount = easeInStrong;
-    const pulseVol = pulseAmount * 0.16;
-    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.4);
+    // Pulse layer: silent for the opening, blooms only in the upper speed range
+    const pulseVol = easeSlow * 0.14;
+    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.9);
 
-    // Pulse tempo and depth ramp smoothly, feeling urgent only near the top
-    if (this.pulseLFO) this.pulseLFO.frequency.setTargetAtTime(1.4 + easeIn * 6.6, now, 0.5);
-    if (this.pulseLFOGain) this.pulseLFOGain.gain.setTargetAtTime(0.2 + easeIn * 0.6, now, 0.5);
 
     // Void layer: rises with void amount and theme darkness
     const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
