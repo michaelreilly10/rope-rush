@@ -1,69 +1,46 @@
-Plan: Prepare Rope Rush for Capacitor iOS export
+## Why music is silent
 
-Goal: Bundle the existing web game as a Capacitor iOS app that builds and runs locally in Xcode, while keeping the online leaderboard working.
+Reading `src/game/audio.ts` carefully after the last change:
 
-Why changes are needed
+- `musicGain` is set directly to `1` in `startMusic`, which is correct.
+- But the actual **oscillator → layer-gain → filter → master** chain now produces almost no audible signal:
+  - Per-oscillator gain is `0.05`, and `baseGain` starts at `0` and only creeps toward `0.05` via `setTargetAtTime(τ=0.8s)`, which is re-anchored every frame (each frame restarts the approach, so it lags badly).
+  - `musicFilter` is a lowpass at `600 Hz` at rest and drops to `340 Hz` at low speed, which is exactly where the melodic content lives — the pulse layer (220–494 Hz) is heavily attenuated and the base pad is barely above the noise floor.
+  - The separate "void ambient" path connects straight to `master` and uses much higher per-oscillator gains (`0.22–0.25`) plus a noise buffer, so it's the only thing loud enough to hear.
+- Net effect: the graph is technically running, but the music mix is ~30 dB quieter than the ambient path, so the player perceives "no music".
 
-- TanStack Start `createServerFn` calls target the current page origin (`/__server`). Inside a Capacitor WebView the origin is `capacitor://localhost` or `file://`, so there is no co-located server to receive those calls. The leaderboard will silently fail unless we route it to the deployed web backend over HTTP.
-- The app currently uses SSR/isomorphic TanStack Start. For a Capacitor package we need a static SPA build.
-- iOS has a few native quirks: no `navigator.vibrate`, a safe-area notch, and the audio context must be started by a user gesture.
+There's also a small robustness issue: `musicGain.gain.value = ...` is a direct-value assignment done while the `AudioContext` can still be suspended. On iOS this occasionally doesn't take. It should be a scheduled event after `ctx.resume()`.
 
-What will be changed
+## Fix
 
-1. Add Capacitor tooling
-   - Install `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`, `@capacitor/status-bar`, and `@capacitor/haptics`.
-   - Create `capacitor.config.ts` with `appId: 'com.roperush.app'`, `appName: 'Rope Rush'`, `webDir: 'dist'`.
-   - Add iOS platform with `npx cap add ios`.
+Edit `src/game/audio.ts` only. No UI or engine changes.
 
-2. Enable SPA mode for the static bundle
-   - Update `vite.config.ts` to set `tanstackStart.spa.enabled: true` (via the Lovable config wrapper) so `vite build` produces a static shell Capacitor can copy into the native app.
+1. **Make the audio actually loud enough.**
+   - Bump per-oscillator gains in the base pad from `0.05` to ~`0.14`, and in the pulse layer from `0.028` to ~`0.06`.
+   - Bump layer-gain targets in `updateMusicLayers`: base target range `0.18 → 0.35`, pulse target range `0 → 0.30`.
+   - Initialize `baseGain.gain.value` to a small non-zero level (e.g. `0.15`) so the pad is audible from the very first frame — no waiting for `setTargetAtTime` to creep up.
 
-3. Replace leaderboard server functions with API routes
-   - Create `src/routes/api/leaderboard/start.ts` — returns a signed session token (same HMAC logic as today).
-   - Create `src/routes/api/leaderboard/scores.ts` — `GET` returns top scores; `POST` submits a score with validation.
-   - Create `src/routes/api/leaderboard/continue.ts` — deletes a score row for the "Continue" ad flow.
-   - Each route includes CORS headers for `capacitor://localhost`, `http://localhost`, and the published origin so the iOS WebView can reach them.
+2. **Open the shared lowpass filter.**
+   - Start the `musicFilter` cutoff at `1200 Hz` (was `600`) and let `updateMusicLayers` open it further with speed (`1200 → 5500 Hz`). This lets the mid/high harmonics of both layers through so the music is actually recognisable at rest.
 
-4. Create a native-aware API client
-   - Add a small helper in `src/lib/leaderboard.api.ts` that picks the base URL:
-     - Web: relative `/api/leaderboard/...` (works in browser and published site).
-     - Native: `import.meta.env.VITE_SERVER_BASE_URL` + `/api/leaderboard/...`.
-   - Use `Capacitor.isNativePlatform()` to detect native.
+3. **Schedule `musicGain` properly.**
+   - In `startMusic`, after calling `ctx.resume()`, use `musicGain.gain.setValueAtTime(musicOn ? 1 : 0, ctx.currentTime)` instead of a raw `.value = ...` assignment. Same in the repeat-run branch. This is what iOS Safari expects and it also avoids clashing with any lingering automation from a previous `sfx('hit')` duck ramp.
 
-5. Update game UI to use the API client
-   - `src/game/RopeRush.tsx` calls `startSession()` from the API client instead of `useServerFn(startGameSession)`.
-   - `src/game/ui/Leaderboard.tsx` fetches top scores via the API client.
-   - `src/game/ui/GameOver.tsx` submits and deletes scores via the API client.
+4. **Stop re-anchoring `setTargetAtTime` every frame.**
+   - In `updateMusicLayers`, keep the same target math but only re-call `setTargetAtTime` when the target has changed meaningfully (e.g. by more than ~2%). This lets each ramp actually reach its target instead of restarting the exponential approach 60 times a second.
 
-6. Add production base URL environment variable
-   - Add `VITE_SERVER_BASE_URL=https://rope-rush.lovable.app` to `.env` (this is public by definition, so the `VITE_` prefix is correct).
-   - Leave it empty/unset for local web dev so relative calls still work.
+5. **Sanity-check the hit duck.**
+   - Leave the ducking behavior intact, but after the ramp back to `musicOn ? 1 : 0`, ensure `duckUntil` is used only for the layer volume compression path (it already is). Nothing else changes here.
 
-7. iOS-specific polish
-   - In `capacitor.config.ts` set `backgroundColor: '#0d0b1a'`, hide the native status bar or match it to the dark theme, and allow the game to draw under the safe area (it already handles its own max-width and portrait layout).
-   - Add a small Capacitor haptics bridge so the existing `haptics` setting works on iOS (optional for the first local build; can be skipped if not needed).
-   - Confirm the audio engine is resumed from the first tap — it already is, but add a guard for the WebView `audioSession` if needed.
+## Verification
 
-Build and run steps
+- Load the preview, tap to start a run, listen for the base pad within the first second (should be immediately audible, not a slow crescendo).
+- Ride into the void — the void music layer plus the existing ambient noise should stack on top of the base, but the base pad should not disappear.
+- Trigger a crash — music should duck briefly and come back to full volume after ~1 s.
+- Retry — music should resume from the very first frame of the new run.
 
-1. `bun install` (or `npm install`) to install the new Capacitor packages.
-2. `bun run build` (or `npm run build`) to produce the static web bundle.
-3. `npx cap sync` to copy the bundle into the iOS project and install native pods.
-4. `npx cap open ios` to open the generated `ios/App/App.xcworkspace` in Xcode.
-5. In Xcode, select a simulator or connected device and run.
+## Out of scope
 
-What you need on your Mac
-
-- Xcode 15+ installed.
-- CocoaPods installed (`sudo gem install cocoapods` or Homebrew).
-- A valid Apple Developer team selected in Xcode if you want to run on a physical device (simulator works without it).
-
-Out of scope for this first pass
-
-- App Store assets (1024x1024 icon, launch storyboard, App Store screenshots). These are only needed for submission, not for a local Xcode build.
-- Real rewarded ads. The existing "Continue" button simulates an ad; swapping in a real provider (AdMob, Chartboost, etc.) is a separate integration.
-- Native sign-in / Game Center. Leaderboard will continue to use the existing name-based leaderboard.
-
-Expected result
-
-After the plan is implemented, the game builds as a local iOS app, starts on tap, plays audio, and can still submit/fetch scores from the deployed Lovable backend.
+- No changes to `engine.ts`, `RopeRush.tsx`, `PauseOverlay.tsx`, or storage.
+- No change to the mute-toggle behavior or saved settings.
+- No new SFX; the "beeping" removal from earlier stays as-is.

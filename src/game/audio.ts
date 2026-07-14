@@ -130,28 +130,37 @@ class AudioEngine {
         this.musicGain.gain.cancelScheduledValues(t0);
         this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, t0);
       }
+      // Also nudge the base pad back to an audible level immediately, in
+      // case a previous hit-duck left it low.
+      if (this.baseGain) {
+        const t0 = ctx.currentTime;
+        this.baseGain.gain.cancelScheduledValues(t0);
+        this.baseGain.gain.setValueAtTime(0.2, t0);
+      }
       return;
     }
     this.musicStarted = true;
 
 
-    // Master music fader and shared filter
+    // Master music fader and shared filter. Cutoff starts high enough that
+    // the melodic content is audible immediately, and opens further with
+    // speed in updateMusicLayers.
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = "lowpass";
-    this.musicFilter.frequency.value = 600;
+    this.musicFilter.frequency.value = 1200;
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    // Set master music level directly. The "ramp-up" feel comes from the
-    // per-layer gains (base/pulse/void) rising with speed via updateMusicLayers.
-    this.musicGain.gain.value = this.musicOn ? 1 : 0;
+    // Schedule the master music level (iOS Safari sometimes ignores raw
+    // `.value =` while the context is still transitioning out of suspended).
+    const tStart = ctx.currentTime;
+    this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, tStart);
     this.musicFilter.connect(this.musicGain).connect(this.master);
 
 
-
-    // 1. Base pad — deep pentatonic drone, always present
+    // 1. Base pad — deep pentatonic drone, audible from the first frame.
     this.baseGain = ctx.createGain();
-    this.baseGain.gain.value = 0;
+    this.baseGain.gain.setValueAtTime(0.2, tStart);
     this.baseGain.connect(this.musicFilter);
     const baseNotes = [110, 146.83, 164.81, 220, 246.94];
     baseNotes.forEach((f, i) => {
@@ -159,15 +168,15 @@ class AudioEngine {
       const g = ctx.createGain();
       osc.type = i % 2 === 0 ? "sine" : "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.05;
+      g.gain.value = 0.14;
       osc.connect(g).connect(this.baseGain!);
       osc.start();
       this.baseNodes.push({ osc, gain: g });
     });
 
-    // 2. Pulse layer — smooth harmonic swell that fades in with speed (no tremolo)
+    // 2. Pulse layer — smooth harmonic swell that fades in with speed
     this.pulseGain = ctx.createGain();
-    this.pulseGain.gain.value = 0;
+    this.pulseGain.gain.setValueAtTime(0, tStart);
     this.pulseGain.connect(this.musicFilter);
     const pulseNotes = [220, 293.66, 329.63, 440, 493.88];
     pulseNotes.forEach((f) => {
@@ -175,7 +184,7 @@ class AudioEngine {
       const g = ctx.createGain();
       osc.type = "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.028;
+      g.gain.value = 0.06;
       osc.connect(g).connect(this.pulseGain!);
       osc.start();
       this.pulseNodes.push({ osc, gain: g });
@@ -188,7 +197,7 @@ class AudioEngine {
     this.voidFilter.frequency.value = 450;
     this.voidFilter.Q.value = 0.6;
     this.voidGain = ctx.createGain();
-    this.voidGain.gain.value = 0;
+    this.voidGain.gain.setValueAtTime(0, tStart);
     this.voidGain.connect(this.voidFilter).connect(this.musicFilter);
     const voidNotes = [55, 65.4, 82.5];
     voidNotes.forEach((f, i) => {
@@ -202,6 +211,7 @@ class AudioEngine {
       this.voidNodes.push({ osc, gain: g });
     });
   }
+
 
   updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
     if (!this.ctx || !this.musicFilter || !this.musicGain) return;
