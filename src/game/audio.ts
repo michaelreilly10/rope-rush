@@ -227,9 +227,10 @@ class AudioEngine {
     // Darken the void filter as it gets deeper
     if (this.voidFilter) this.voidFilter.frequency.setTargetAtTime(450 - voidAmount * 200, now, 0.5);
 
-    // Master fader respects the music toggle
-    const masterVol = this.musicOn ? 1 : 0;
-    this.musicGain.gain.setTargetAtTime(ducked ? masterVol * 0.35 : masterVol, now, 0.3);
+    // Master fader: only apply ducking here. The music on/off toggle and
+    // start-of-run fade-in are driven by setMusic/startMusic so we don't
+    // fight the linear fade-in ramp every frame.
+    if (ducked) this.musicGain.gain.setTargetAtTime(0.35, now, 0.3);
   }
 
   private startAmbient() {
