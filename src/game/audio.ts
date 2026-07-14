@@ -130,28 +130,37 @@ class AudioEngine {
         this.musicGain.gain.cancelScheduledValues(t0);
         this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, t0);
       }
+      // Also nudge the base pad back to an audible level immediately, in
+      // case a previous hit-duck left it low.
+      if (this.baseGain) {
+        const t0 = ctx.currentTime;
+        this.baseGain.gain.cancelScheduledValues(t0);
+        this.baseGain.gain.setValueAtTime(0.2, t0);
+      }
       return;
     }
     this.musicStarted = true;
 
 
-    // Master music fader and shared filter
+    // Master music fader and shared filter. Cutoff starts high enough that
+    // the melodic content is audible immediately, and opens further with
+    // speed in updateMusicLayers.
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = "lowpass";
-    this.musicFilter.frequency.value = 600;
+    this.musicFilter.frequency.value = 1200;
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    // Set master music level directly. The "ramp-up" feel comes from the
-    // per-layer gains (base/pulse/void) rising with speed via updateMusicLayers.
-    this.musicGain.gain.value = this.musicOn ? 1 : 0;
+    // Schedule the master music level (iOS Safari sometimes ignores raw
+    // `.value =` while the context is still transitioning out of suspended).
+    const tStart = ctx.currentTime;
+    this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, tStart);
     this.musicFilter.connect(this.musicGain).connect(this.master);
 
 
-
-    // 1. Base pad — deep pentatonic drone, always present
+    // 1. Base pad — deep pentatonic drone, audible from the first frame.
     this.baseGain = ctx.createGain();
-    this.baseGain.gain.value = 0;
+    this.baseGain.gain.setValueAtTime(0.2, tStart);
     this.baseGain.connect(this.musicFilter);
     const baseNotes = [110, 146.83, 164.81, 220, 246.94];
     baseNotes.forEach((f, i) => {
@@ -159,15 +168,15 @@ class AudioEngine {
       const g = ctx.createGain();
       osc.type = i % 2 === 0 ? "sine" : "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.05;
+      g.gain.value = 0.14;
       osc.connect(g).connect(this.baseGain!);
       osc.start();
       this.baseNodes.push({ osc, gain: g });
     });
 
-    // 2. Pulse layer — smooth harmonic swell that fades in with speed (no tremolo)
+    // 2. Pulse layer — smooth harmonic swell that fades in with speed
     this.pulseGain = ctx.createGain();
-    this.pulseGain.gain.value = 0;
+    this.pulseGain.gain.setValueAtTime(0, tStart);
     this.pulseGain.connect(this.musicFilter);
     const pulseNotes = [220, 293.66, 329.63, 440, 493.88];
     pulseNotes.forEach((f) => {
@@ -175,7 +184,7 @@ class AudioEngine {
       const g = ctx.createGain();
       osc.type = "triangle";
       osc.frequency.value = f;
-      g.gain.value = 0.028;
+      g.gain.value = 0.06;
       osc.connect(g).connect(this.pulseGain!);
       osc.start();
       this.pulseNodes.push({ osc, gain: g });
@@ -188,7 +197,7 @@ class AudioEngine {
     this.voidFilter.frequency.value = 450;
     this.voidFilter.Q.value = 0.6;
     this.voidGain = ctx.createGain();
-    this.voidGain.gain.value = 0;
+    this.voidGain.gain.setValueAtTime(0, tStart);
     this.voidGain.connect(this.voidFilter).connect(this.musicFilter);
     const voidNotes = [55, 65.4, 82.5];
     voidNotes.forEach((f, i) => {
@@ -203,41 +212,70 @@ class AudioEngine {
     });
   }
 
+
+  // Cached last-applied targets so we don't re-anchor setTargetAtTime every
+  // frame (which restarts the exponential approach and prevents the ramp
+  // from ever settling).
+  private lastFilter = -1;
+  private lastBase = -1;
+  private lastPulse = -1;
+  private lastVoid = -1;
+  private lastVoidFilter = -1;
+
   updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
     if (!this.ctx || !this.musicFilter || !this.musicGain) return;
     const now = this.ctx.currentTime;
     const ducked = now < this.duckUntil;
     const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+    const changed = (prev: number, next: number, rel = 0.02) =>
+      prev < 0 || Math.abs(next - prev) > Math.max(0.001, Math.abs(prev) * rel);
 
     const s = clamp01(speedPct);
-    // Gentle quartic curve: very calm early, most intensity near max speed
     const easeSlow = s * s * s * s;
     const easeMid = s * s * s;
 
-    // Shared filter: stays dark and mellow at low speed, opens dramatically near max
-    const targetFilter = 340 + easeMid * 4400;
-    this.musicFilter.frequency.setTargetAtTime(ducked ? 300 : targetFilter, now, 0.8);
+    // Shared filter: audible mids even at rest, opens further with speed.
+    const targetFilter = 1200 + easeMid * 4300;
+    const filterVal = ducked ? 700 : targetFilter;
+    if (changed(this.lastFilter, filterVal)) {
+      this.musicFilter.frequency.setTargetAtTime(filterVal, now, 0.6);
+      this.lastFilter = filterVal;
+    }
 
-    // Base pad: soft at start, gradual lift
-    const baseVol = 0.05 + easeMid * 0.1;
-    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.8);
+    // Base pad: immediately audible, lifts a bit with speed.
+    const baseVol = 0.18 + easeMid * 0.17;
+    const baseVal = ducked ? baseVol * 0.35 : baseVol;
+    if (this.baseGain && changed(this.lastBase, baseVal)) {
+      this.baseGain.gain.setTargetAtTime(baseVal, now, 0.6);
+      this.lastBase = baseVal;
+    }
 
-    // Pulse layer: silent for the opening, blooms only in the upper speed range
-    const pulseVol = easeSlow * 0.14;
-    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.9);
+    // Pulse layer: silent for the opening, blooms toward top speed.
+    const pulseVol = easeSlow * 0.30;
+    const pulseVal = ducked ? pulseVol * 0.35 : pulseVol;
+    if (this.pulseGain && changed(this.lastPulse, pulseVal)) {
+      this.pulseGain.gain.setTargetAtTime(pulseVal, now, 0.7);
+      this.lastPulse = pulseVal;
+    }
 
-
-    // Void layer: rises with void amount and theme darkness
+    // Void layer: rises with void amount and theme darkness.
     const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
     const voidVol = clamp01(voidAmount) * 0.10;
-    this.voidGain?.gain.setTargetAtTime(ducked ? voidVol * 0.35 : voidVol, now, 0.5);
-    // Darken the void filter as it gets deeper
-    if (this.voidFilter) this.voidFilter.frequency.setTargetAtTime(450 - voidAmount * 200, now, 0.5);
+    const voidVal = ducked ? voidVol * 0.35 : voidVol;
+    if (this.voidGain && changed(this.lastVoid, voidVal)) {
+      this.voidGain.gain.setTargetAtTime(voidVal, now, 0.5);
+      this.lastVoid = voidVal;
+    }
+    const voidFilterVal = 450 - voidAmount * 200;
+    if (this.voidFilter && changed(this.lastVoidFilter, voidFilterVal)) {
+      this.voidFilter.frequency.setTargetAtTime(voidFilterVal, now, 0.5);
+      this.lastVoidFilter = voidFilterVal;
+    }
 
-    // NOTE: musicGain is intentionally NOT touched here. Master volume is
-    // driven only by setMusic/startMusic/sfx('hit') so we don't clobber the
-    // start-of-run linear fade-in ramp every frame (which was silencing music).
+    // NOTE: musicGain is intentionally NOT touched here. Master music level
+    // is driven only by setMusic/startMusic/sfx('hit').
   }
+
 
   private startAmbient() {
     if (this.ambientStarted) return;
