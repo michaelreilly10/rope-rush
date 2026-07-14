@@ -13,6 +13,7 @@
     "build:capacitor": "vite build && node scripts/capacitor-static.js"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
     "@capacitor/core": "^8.4.1",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.4.1",
