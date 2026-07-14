@@ -94,7 +94,14 @@ class AudioEngine {
       case "hit":
         this.blip(160, 0.18, "sawtooth", 0.28, -100);
         this.blip(80, 0.22, "square", 0.2, -40);
-        this.duckUntil = (this.ctx?.currentTime ?? 0) + 1.0;
+        if (this.ctx && this.musicGain) {
+          const t = this.ctx.currentTime;
+          this.duckUntil = t + 1.0;
+          this.musicGain.gain.cancelScheduledValues(t);
+          this.musicGain.gain.setValueAtTime(this.musicGain.gain.value, t);
+          this.musicGain.gain.linearRampToValueAtTime(0.35, t + 0.05);
+          this.musicGain.gain.linearRampToValueAtTime(this.musicOn ? 1 : 0, t + 1.0);
+        }
         break;
       case "combo": this.blip(880, 0.06, "triangle", 0.1, 240); break;
       case "milestone":
