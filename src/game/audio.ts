@@ -119,13 +119,16 @@ class AudioEngine {
   startMusic() {
     const ctx = this.ensure();
     if (!ctx || !this.master) return;
-    // On repeat runs, just re-trigger the fade-in on the existing graph
+    // Ensure context is running (needs a user gesture; startMusic is called
+    // from tap/start-run handlers which count as one).
+    if (ctx.state === "suspended") { void ctx.resume(); }
+
+    // On repeat runs, just make sure master music gain is at the right level.
     if (this.musicStarted) {
-      if (this.musicGain && this.musicOn) {
+      if (this.musicGain) {
         const t0 = ctx.currentTime;
         this.musicGain.gain.cancelScheduledValues(t0);
-        this.musicGain.gain.setValueAtTime(0, t0);
-        this.musicGain.gain.linearRampToValueAtTime(1, t0 + 3.0);
+        this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, t0);
       }
       return;
     }
@@ -139,14 +142,11 @@ class AudioEngine {
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    // Fade in gently from silence so the music eases in at the start of a run
-    this.musicGain.gain.value = 0;
-    if (this.musicOn) {
-      const t0 = ctx.currentTime;
-      this.musicGain.gain.setValueAtTime(0, t0);
-      this.musicGain.gain.linearRampToValueAtTime(1, t0 + 3.0);
-    }
+    // Set master music level directly. The "ramp-up" feel comes from the
+    // per-layer gains (base/pulse/void) rising with speed via updateMusicLayers.
+    this.musicGain.gain.value = this.musicOn ? 1 : 0;
     this.musicFilter.connect(this.musicGain).connect(this.master);
+
 
 
     // 1. Base pad — deep pentatonic drone, always present
