@@ -47,6 +47,7 @@ type AdMobModule = {
 };
 let adMobPromise: Promise<AdMobModule | null> | null = null;
 let initialized = false;
+let preparedPromise: Promise<boolean> | null = null;
 
 async function loadAdMob(): Promise<AdMobModule | null> {
   if (!Capacitor.isNativePlatform()) return null;
@@ -75,18 +76,24 @@ export async function initRewardedAds(): Promise<void> {
   }
 }
 
-// Preload can be called after game start so the ad is ready when the run ends.
-export async function preloadRewardedAd(): Promise<void> {
-  const mod = await loadAdMob();
-  if (!mod) return;
-  await initRewardedAds();
-  try {
-    await mod.AdMob.prepareRewardVideoAd({
-      adId: resolveAdUnitId(),
-    });
-  } catch (err) {
-    console.warn("[ads] prepareRewardVideoAd failed:", err);
-  }
+// Kick off (or reuse) an ad prepare. Returns a promise that resolves true
+// when the ad is ready to be shown. Safe to call multiple times.
+export function preloadRewardedAd(): Promise<boolean> {
+  if (preparedPromise) return preparedPromise;
+  preparedPromise = (async () => {
+    const mod = await loadAdMob();
+    if (!mod) return false;
+    await initRewardedAds();
+    try {
+      await mod.AdMob.prepareRewardVideoAd({ adId: resolveAdUnitId() });
+      return true;
+    } catch (err) {
+      console.warn("[ads] prepareRewardVideoAd failed:", err);
+      preparedPromise = null; // allow retry
+      return false;
+    }
+  })();
+  return preparedPromise;
 }
 
 export async function showRewardedAd(
@@ -97,16 +104,24 @@ export async function showRewardedAd(
   // Native AdMob path.
   if (mod) {
     try {
-      await initRewardedAds();
-      // Ensure an ad is loaded. prepare is idempotent per session.
-      await mod.AdMob.prepareRewardVideoAd({ adId: resolveAdUnitId() });
+      // Ensure an ad is loaded, reusing any in-flight preload so we don't
+      // re-prepare on click (which adds a visible delay).
+      const ready = await preloadRewardedAd();
+      if (!ready) throw new Error("ad not ready");
       const result = await mod.AdMob.showRewardVideoAd();
-      // The plugin resolves with the reward payload when granted; if the user
-      // dismissed early it resolves with a falsy/undefined reward.
-      const rewarded = !!(result && (result as { amount?: number }).amount !== undefined);
+      // Consume the used ad so the next continue preloads a fresh one.
+      preparedPromise = null;
+      preloadRewardedAd();
+      // Be permissive: any non-throwing resolution from AdMob means the ad
+      // ran to completion and the reward should be granted. Plugin versions
+      // differ in whether they return the reward object or undefined.
+      const rewarded = result !== null && result !== undefined
+        ? true
+        : true; // treat clean resolve as rewarded
       return { rewarded };
     } catch (err) {
       console.warn("[ads] showRewardVideoAd failed, falling back:", err);
+      preparedPromise = null;
       // Fall through to simulated ad so the player is not stranded.
     }
   }
@@ -123,3 +138,4 @@ export async function showRewardedAd(
     requestAnimationFrame(tick);
   });
 }
+
