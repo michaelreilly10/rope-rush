@@ -213,41 +213,69 @@ class AudioEngine {
   }
 
 
+  // Cached last-applied targets so we don't re-anchor setTargetAtTime every
+  // frame (which restarts the exponential approach and prevents the ramp
+  // from ever settling).
+  private lastFilter = -1;
+  private lastBase = -1;
+  private lastPulse = -1;
+  private lastVoid = -1;
+  private lastVoidFilter = -1;
+
   updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
     if (!this.ctx || !this.musicFilter || !this.musicGain) return;
     const now = this.ctx.currentTime;
     const ducked = now < this.duckUntil;
     const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+    const changed = (prev: number, next: number, rel = 0.02) =>
+      prev < 0 || Math.abs(next - prev) > Math.max(0.001, Math.abs(prev) * rel);
 
     const s = clamp01(speedPct);
-    // Gentle quartic curve: very calm early, most intensity near max speed
     const easeSlow = s * s * s * s;
     const easeMid = s * s * s;
 
-    // Shared filter: stays dark and mellow at low speed, opens dramatically near max
-    const targetFilter = 340 + easeMid * 4400;
-    this.musicFilter.frequency.setTargetAtTime(ducked ? 300 : targetFilter, now, 0.8);
+    // Shared filter: audible mids even at rest, opens further with speed.
+    const targetFilter = 1200 + easeMid * 4300;
+    const filterVal = ducked ? 700 : targetFilter;
+    if (changed(this.lastFilter, filterVal)) {
+      this.musicFilter.frequency.setTargetAtTime(filterVal, now, 0.6);
+      this.lastFilter = filterVal;
+    }
 
-    // Base pad: soft at start, gradual lift
-    const baseVol = 0.05 + easeMid * 0.1;
-    this.baseGain?.gain.setTargetAtTime(ducked ? baseVol * 0.35 : baseVol, now, 0.8);
+    // Base pad: immediately audible, lifts a bit with speed.
+    const baseVol = 0.18 + easeMid * 0.17;
+    const baseVal = ducked ? baseVol * 0.35 : baseVol;
+    if (this.baseGain && changed(this.lastBase, baseVal)) {
+      this.baseGain.gain.setTargetAtTime(baseVal, now, 0.6);
+      this.lastBase = baseVal;
+    }
 
-    // Pulse layer: silent for the opening, blooms only in the upper speed range
-    const pulseVol = easeSlow * 0.14;
-    this.pulseGain?.gain.setTargetAtTime(ducked ? pulseVol * 0.35 : pulseVol, now, 0.9);
+    // Pulse layer: silent for the opening, blooms toward top speed.
+    const pulseVol = easeSlow * 0.30;
+    const pulseVal = ducked ? pulseVol * 0.35 : pulseVol;
+    if (this.pulseGain && changed(this.lastPulse, pulseVal)) {
+      this.pulseGain.gain.setTargetAtTime(pulseVal, now, 0.7);
+      this.lastPulse = pulseVal;
+    }
 
-
-    // Void layer: rises with void amount and theme darkness
+    // Void layer: rises with void amount and theme darkness.
     const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
     const voidVol = clamp01(voidAmount) * 0.10;
-    this.voidGain?.gain.setTargetAtTime(ducked ? voidVol * 0.35 : voidVol, now, 0.5);
-    // Darken the void filter as it gets deeper
-    if (this.voidFilter) this.voidFilter.frequency.setTargetAtTime(450 - voidAmount * 200, now, 0.5);
+    const voidVal = ducked ? voidVol * 0.35 : voidVol;
+    if (this.voidGain && changed(this.lastVoid, voidVal)) {
+      this.voidGain.gain.setTargetAtTime(voidVal, now, 0.5);
+      this.lastVoid = voidVal;
+    }
+    const voidFilterVal = 450 - voidAmount * 200;
+    if (this.voidFilter && changed(this.lastVoidFilter, voidFilterVal)) {
+      this.voidFilter.frequency.setTargetAtTime(voidFilterVal, now, 0.5);
+      this.lastVoidFilter = voidFilterVal;
+    }
 
-    // NOTE: musicGain is intentionally NOT touched here. Master volume is
-    // driven only by setMusic/startMusic/sfx('hit') so we don't clobber the
-    // start-of-run linear fade-in ramp every frame (which was silencing music).
+    // NOTE: musicGain is intentionally NOT touched here. Master music level
+    // is driven only by setMusic/startMusic/sfx('hit').
   }
+
 
   private startAmbient() {
     if (this.ambientStarted) return;
