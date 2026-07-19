@@ -221,37 +221,52 @@ class AudioEngine {
   private lastPulse = -1;
   private lastVoid = -1;
   private lastVoidFilter = -1;
+  private musicT0 = -1;
 
   updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
     if (!this.ctx || !this.musicFilter || !this.musicGain) return;
     const now = this.ctx.currentTime;
+    if (this.musicT0 < 0) this.musicT0 = now;
+    const elapsed = now - this.musicT0;
     const ducked = now < this.duckUntil;
     const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-    const changed = (prev: number, next: number, rel = 0.02) =>
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    const changed = (prev: number, next: number, rel = 0.015) =>
       prev < 0 || Math.abs(next - prev) > Math.max(0.001, Math.abs(prev) * rel);
 
     const s = clamp01(speedPct);
-    const easeSlow = s * s * s * s;
-    const easeMid = s * s * s;
+    // Smoothstep — no dead zone at low speed, no abrupt bloom at the top.
+    const sCurve = s * s * (3 - 2 * s);
+    // Pulse leans a touch later than the base/filter but still lifts gradually.
+    const sSlow = sCurve * (0.4 + 0.6 * s);
 
-    // Shared filter: audible mids even at rest, opens further with speed.
-    const targetFilter = 1200 + easeMid * 4300;
+    // Slow, incommensurate drifts so the mix never settles on identical
+    // values for long during multi-minute runs.
+    const modA = Math.sin((2 * Math.PI * elapsed) / 23);
+    const modB = Math.sin((2 * Math.PI * elapsed) / 37);
+    const filterMod = modA * 350;
+    const pulseMod = modB * 0.05;
+    const baseMod = modA * 0.02;
+
+    // Shared filter: audible mids even at rest, opens further with speed,
+    // gently drifts over time.
+    const targetFilter = clamp(1200 + sCurve * 4300 + filterMod, 500, 6500);
     const filterVal = ducked ? 700 : targetFilter;
     if (changed(this.lastFilter, filterVal)) {
       this.musicFilter.frequency.setTargetAtTime(filterVal, now, 0.6);
       this.lastFilter = filterVal;
     }
 
-    // Base pad: immediately audible, lifts a bit with speed.
-    const baseVol = 0.18 + easeMid * 0.17;
+    // Base pad: immediately audible, lifts smoothly with speed.
+    const baseVol = clamp01(0.18 + sCurve * 0.17 + sCurve * baseMod);
     const baseVal = ducked ? baseVol * 0.35 : baseVol;
     if (this.baseGain && changed(this.lastBase, baseVal)) {
       this.baseGain.gain.setTargetAtTime(baseVal, now, 0.6);
       this.lastBase = baseVal;
     }
 
-    // Pulse layer: silent for the opening, blooms toward top speed.
-    const pulseVol = easeSlow * 0.30;
+    // Pulse layer: gentle bloom instead of a late spike.
+    const pulseVol = clamp01(sSlow * 0.30 + sCurve * pulseMod);
     const pulseVal = ducked ? pulseVol * 0.35 : pulseVol;
     if (this.pulseGain && changed(this.lastPulse, pulseVal)) {
       this.pulseGain.gain.setTargetAtTime(pulseVal, now, 0.7);
