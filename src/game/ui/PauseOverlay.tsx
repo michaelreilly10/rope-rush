@@ -1,4 +1,4 @@
-import { Volume2, VolumeX } from "lucide-react";
+import { Music, Volume2, VolumeX } from "lucide-react";
 import { useState } from "react";
 import { audio, type MusicVibe } from "../audio";
 
@@ -22,6 +22,7 @@ export function PauseOverlay({
   onToggleMute: () => void;
 }) {
   const [vibe, setVibe] = useState<MusicVibe>(() => audio.getVibe());
+  const [musicOpen, setMusicOpen] = useState(false);
 
   const pick = (v: MusicVibe) => {
     audio.setVibe(v);
@@ -37,37 +38,55 @@ export function PauseOverlay({
       >
         Resume
       </button>
+
       <button
-        onClick={onToggleMute}
-        aria-label={muted ? "Unmute" : "Mute"}
-        className="flex items-center gap-2 rounded-xl bg-white/10 px-5 py-2 text-white active:scale-95"
+        onClick={() => setMusicOpen((o) => !o)}
+        aria-label="Music options"
+        aria-expanded={musicOpen}
+        className={
+          "flex items-center gap-2 rounded-full px-5 py-2 text-white transition active:scale-95 " +
+          (musicOpen ? "bg-white/25" : "bg-white/10 hover:bg-white/20")
+        }
       >
-        {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        <span className="text-sm">{muted ? "Muted" : "Sound"}</span>
+        <Music size={18} />
+        <span className="text-sm">Music</span>
       </button>
 
-      <div className="flex flex-col items-center gap-2">
-        <div className="text-xs uppercase tracking-widest text-white/60">Music Vibe</div>
-        <div className="flex flex-wrap justify-center gap-1.5 px-4">
-          {VIBES.map((v) => {
-            const active = v.id === vibe;
-            return (
-              <button
-                key={v.id}
-                onClick={() => pick(v.id)}
-                className={
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition active:scale-95 " +
-                  (active
-                    ? "bg-white text-black shadow"
-                    : "bg-white/10 text-white hover:bg-white/20")
-                }
-              >
-                {v.label}
-              </button>
-            );
-          })}
+      {musicOpen && (
+        <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/5 px-5 py-4 backdrop-blur-sm">
+          <button
+            onClick={onToggleMute}
+            aria-label={muted ? "Unmute" : "Mute"}
+            className="flex items-center gap-2 rounded-xl bg-white/10 px-5 py-2 text-white active:scale-95"
+          >
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            <span className="text-sm">{muted ? "Muted" : "Sound"}</span>
+          </button>
+
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-xs uppercase tracking-widest text-white/60">Vibe</div>
+            <div className="flex flex-wrap justify-center gap-1.5 max-w-[280px]">
+              {VIBES.map((v) => {
+                const active = v.id === vibe;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => pick(v.id)}
+                    className={
+                      "rounded-full px-3 py-1.5 text-xs font-medium transition active:scale-95 " +
+                      (active
+                        ? "bg-white text-black shadow"
+                        : "bg-white/10 text-white hover:bg-white/20")
+                    }
+                  >
+                    {v.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       <button
         onClick={onMenu}
