@@ -11,6 +11,109 @@ type SfxName =
   | "over"
   | "ui";
 
+export type MusicVibe = "calm" | "tense" | "arcade" | "cinematic" | "dark";
+
+type VibePreset = {
+  baseNotes: number[];
+  baseTypes: OscillatorType[];
+  baseOscGain: number;      // per-oscillator gain inside the base layer
+  baseGainBias: number;     // additive lift for the base layer target
+  baseGainSpeed: number;    // how much speed pushes the base layer
+  pulseNotes: number[];
+  pulseType: OscillatorType;
+  pulseOscGain: number;
+  pulseGainScale: number;   // scales the smoothstep pulse target
+  filterBase: number;
+  filterRange: number;
+  voidMul: number;
+};
+
+const VIBE_PRESETS: Record<MusicVibe, VibePreset> = {
+  calm: {
+    baseNotes: [98, 130.81, 146.83, 196, 220],
+    baseTypes: ["sine", "sine", "sine", "triangle", "sine"],
+    baseOscGain: 0.16,
+    baseGainBias: 0.22,
+    baseGainSpeed: 0.10,
+    pulseNotes: [261.63, 329.63, 392, 523.25, 587.33],
+    pulseType: "sine",
+    pulseOscGain: 0.05,
+    pulseGainScale: 0.18,
+    filterBase: 950,
+    filterRange: 2600,
+    voidMul: 0.8,
+  },
+  tense: {
+    baseNotes: [110, 138.59, 164.81, 220, 261.63],
+    baseTypes: ["triangle", "sawtooth", "triangle", "sawtooth", "triangle"],
+    baseOscGain: 0.12,
+    baseGainBias: 0.16,
+    baseGainSpeed: 0.22,
+    pulseNotes: [220, 277.18, 329.63, 415.3, 493.88],
+    pulseType: "sawtooth",
+    pulseOscGain: 0.05,
+    pulseGainScale: 0.38,
+    filterBase: 900,
+    filterRange: 5200,
+    voidMul: 1.1,
+  },
+  arcade: {
+    baseNotes: [110, 146.83, 164.81, 220, 246.94],
+    baseTypes: ["sine", "triangle", "sine", "triangle", "sine"],
+    baseOscGain: 0.14,
+    baseGainBias: 0.18,
+    baseGainSpeed: 0.17,
+    pulseNotes: [220, 293.66, 329.63, 440, 493.88],
+    pulseType: "triangle",
+    pulseOscGain: 0.06,
+    pulseGainScale: 0.30,
+    filterBase: 1200,
+    filterRange: 4300,
+    voidMul: 1.0,
+  },
+  cinematic: {
+    baseNotes: [82.41, 123.47, 164.81, 246.94, 329.63],
+    baseTypes: ["triangle", "sine", "triangle", "sine", "triangle"],
+    baseOscGain: 0.17,
+    baseGainBias: 0.24,
+    baseGainSpeed: 0.16,
+    pulseNotes: [329.63, 392, 493.88, 587.33, 659.25],
+    pulseType: "triangle",
+    pulseOscGain: 0.06,
+    pulseGainScale: 0.26,
+    filterBase: 1400,
+    filterRange: 5000,
+    voidMul: 1.05,
+  },
+  dark: {
+    baseNotes: [65.41, 82.41, 98, 130.81, 164.81],
+    baseTypes: ["sine", "triangle", "sine", "triangle", "sawtooth"],
+    baseOscGain: 0.18,
+    baseGainBias: 0.2,
+    baseGainSpeed: 0.14,
+    pulseNotes: [164.81, 196, 233.08, 293.66, 349.23],
+    pulseType: "triangle",
+    pulseOscGain: 0.05,
+    pulseGainScale: 0.22,
+    filterBase: 750,
+    filterRange: 3200,
+    voidMul: 1.7,
+  },
+};
+
+const VIBE_STORAGE_KEY = "roperush:musicVibe";
+const isVibe = (v: unknown): v is MusicVibe =>
+  v === "calm" || v === "tense" || v === "arcade" || v === "cinematic" || v === "dark";
+
+function loadVibe(): MusicVibe {
+  if (typeof window === "undefined") return "arcade";
+  try {
+    const v = window.localStorage.getItem(VIBE_STORAGE_KEY);
+    if (isVibe(v)) return v;
+  } catch { /* ignore */ }
+  return "arcade";
+}
+
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -34,11 +137,44 @@ class AudioEngine {
   private ambientStarted = false;
   public sfxOn = true;
   public musicOn = true;
+  private vibe: MusicVibe = loadVibe();
 
   get muted() { return !this.sfxOn && !this.musicOn; }
   setMuted(on: boolean) {
     this.setSfx(!on);
     this.setMusic(!on);
+  }
+
+  getVibe(): MusicVibe { return this.vibe; }
+  setVibe(vibe: MusicVibe) {
+    if (!isVibe(vibe)) return;
+    this.vibe = vibe;
+    try { window.localStorage.setItem(VIBE_STORAGE_KEY, vibe); } catch { /* ignore */ }
+    this.applyVibeToNodes();
+    // Force next updateMusicLayers to re-apply targets under the new preset.
+    this.lastFilter = -1;
+    this.lastBase = -1;
+    this.lastPulse = -1;
+    this.lastVoid = -1;
+    this.lastVoidFilter = -1;
+  }
+
+  private applyVibeToNodes() {
+    if (!this.ctx) return;
+    const preset = VIBE_PRESETS[this.vibe];
+    const t = this.ctx.currentTime;
+    this.baseNodes.forEach((n, i) => {
+      const f = preset.baseNotes[i] ?? preset.baseNotes[preset.baseNotes.length - 1];
+      n.osc.type = preset.baseTypes[i] ?? preset.baseTypes[0];
+      n.osc.frequency.setTargetAtTime(f, t, 0.15);
+      n.gain.gain.setTargetAtTime(preset.baseOscGain, t, 0.2);
+    });
+    this.pulseNodes.forEach((n, i) => {
+      const f = preset.pulseNotes[i] ?? preset.pulseNotes[preset.pulseNotes.length - 1];
+      n.osc.type = preset.pulseType;
+      n.osc.frequency.setTargetAtTime(f, t, 0.15);
+      n.gain.gain.setTargetAtTime(preset.pulseOscGain, t, 0.2);
+    });
   }
 
   private ensure() {
@@ -119,19 +255,14 @@ class AudioEngine {
   startMusic() {
     const ctx = this.ensure();
     if (!ctx || !this.master) return;
-    // Ensure context is running (needs a user gesture; startMusic is called
-    // from tap/start-run handlers which count as one).
     if (ctx.state === "suspended") { void ctx.resume(); }
 
-    // On repeat runs, just make sure master music gain is at the right level.
     if (this.musicStarted) {
       if (this.musicGain) {
         const t0 = ctx.currentTime;
         this.musicGain.gain.cancelScheduledValues(t0);
         this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, t0);
       }
-      // Also nudge the base pad back to an audible level immediately, in
-      // case a previous hit-duck left it low.
       if (this.baseGain) {
         const t0 = ctx.currentTime;
         this.baseGain.gain.cancelScheduledValues(t0);
@@ -141,57 +272,49 @@ class AudioEngine {
     }
     this.musicStarted = true;
 
+    const preset = VIBE_PRESETS[this.vibe];
 
-    // Master music fader and shared filter. Cutoff starts high enough that
-    // the melodic content is audible immediately, and opens further with
-    // speed in updateMusicLayers.
     this.musicFilter = ctx.createBiquadFilter();
     this.musicFilter.type = "lowpass";
-    this.musicFilter.frequency.value = 1200;
+    this.musicFilter.frequency.value = preset.filterBase;
     this.musicFilter.Q.value = 0.7;
 
     this.musicGain = ctx.createGain();
-    // Schedule the master music level (iOS Safari sometimes ignores raw
-    // `.value =` while the context is still transitioning out of suspended).
     const tStart = ctx.currentTime;
     this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, tStart);
     this.musicFilter.connect(this.musicGain).connect(this.master);
 
-
-    // 1. Base pad — deep pentatonic drone, audible from the first frame.
+    // 1. Base pad
     this.baseGain = ctx.createGain();
-    this.baseGain.gain.setValueAtTime(0.2, tStart);
+    this.baseGain.gain.setValueAtTime(preset.baseGainBias, tStart);
     this.baseGain.connect(this.musicFilter);
-    const baseNotes = [110, 146.83, 164.81, 220, 246.94];
-    baseNotes.forEach((f, i) => {
+    preset.baseNotes.forEach((f, i) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
-      osc.type = i % 2 === 0 ? "sine" : "triangle";
+      osc.type = preset.baseTypes[i] ?? preset.baseTypes[0];
       osc.frequency.value = f;
-      g.gain.value = 0.14;
+      g.gain.value = preset.baseOscGain;
       osc.connect(g).connect(this.baseGain!);
       osc.start();
       this.baseNodes.push({ osc, gain: g });
     });
 
-    // 2. Pulse layer — smooth harmonic swell that fades in with speed
+    // 2. Pulse layer
     this.pulseGain = ctx.createGain();
     this.pulseGain.gain.setValueAtTime(0, tStart);
     this.pulseGain.connect(this.musicFilter);
-    const pulseNotes = [220, 293.66, 329.63, 440, 493.88];
-    pulseNotes.forEach((f) => {
+    preset.pulseNotes.forEach((f) => {
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
-      osc.type = "triangle";
+      osc.type = preset.pulseType;
       osc.frequency.value = f;
-      g.gain.value = 0.06;
+      g.gain.value = preset.pulseOscGain;
       osc.connect(g).connect(this.pulseGain!);
       osc.start();
       this.pulseNodes.push({ osc, gain: g });
     });
 
-
-    // 3. Void layer — dark sub drones, rises in the void / dark themes
+    // 3. Void layer
     this.voidFilter = ctx.createBiquadFilter();
     this.voidFilter.type = "lowpass";
     this.voidFilter.frequency.value = 450;
@@ -212,10 +335,6 @@ class AudioEngine {
     });
   }
 
-
-  // Cached last-applied targets so we don't re-anchor setTargetAtTime every
-  // frame (which restarts the exponential approach and prevents the ramp
-  // from ever settling).
   private lastFilter = -1;
   private lastBase = -1;
   private lastPulse = -1;
@@ -225,6 +344,7 @@ class AudioEngine {
 
   updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
     if (!this.ctx || !this.musicFilter || !this.musicGain) return;
+    const preset = VIBE_PRESETS[this.vibe];
     const now = this.ctx.currentTime;
     if (this.musicT0 < 0) this.musicT0 = now;
     const elapsed = now - this.musicT0;
@@ -235,47 +355,38 @@ class AudioEngine {
       prev < 0 || Math.abs(next - prev) > Math.max(0.001, Math.abs(prev) * rel);
 
     const s = clamp01(speedPct);
-    // Smoothstep — no dead zone at low speed, no abrupt bloom at the top.
     const sCurve = s * s * (3 - 2 * s);
-    // Pulse leans a touch later than the base/filter but still lifts gradually.
     const sSlow = sCurve * (0.4 + 0.6 * s);
 
-    // Slow, incommensurate drifts so the mix never settles on identical
-    // values for long during multi-minute runs.
     const modA = Math.sin((2 * Math.PI * elapsed) / 23);
     const modB = Math.sin((2 * Math.PI * elapsed) / 37);
     const filterMod = modA * 350;
     const pulseMod = modB * 0.05;
     const baseMod = modA * 0.02;
 
-    // Shared filter: audible mids even at rest, opens further with speed,
-    // gently drifts over time.
-    const targetFilter = clamp(1200 + sCurve * 4300 + filterMod, 500, 6500);
-    const filterVal = ducked ? 700 : targetFilter;
+    const targetFilter = clamp(preset.filterBase + sCurve * preset.filterRange + filterMod, 400, 7000);
+    const filterVal = ducked ? Math.min(preset.filterBase, 700) : targetFilter;
     if (changed(this.lastFilter, filterVal)) {
       this.musicFilter.frequency.setTargetAtTime(filterVal, now, 0.6);
       this.lastFilter = filterVal;
     }
 
-    // Base pad: immediately audible, lifts smoothly with speed.
-    const baseVol = clamp01(0.18 + sCurve * 0.17 + sCurve * baseMod);
+    const baseVol = clamp01(preset.baseGainBias + sCurve * preset.baseGainSpeed + sCurve * baseMod);
     const baseVal = ducked ? baseVol * 0.35 : baseVol;
     if (this.baseGain && changed(this.lastBase, baseVal)) {
       this.baseGain.gain.setTargetAtTime(baseVal, now, 0.6);
       this.lastBase = baseVal;
     }
 
-    // Pulse layer: gentle bloom instead of a late spike.
-    const pulseVol = clamp01(sSlow * 0.30 + sCurve * pulseMod);
+    const pulseVol = clamp01(sSlow * preset.pulseGainScale + sCurve * pulseMod);
     const pulseVal = ducked ? pulseVol * 0.35 : pulseVol;
     if (this.pulseGain && changed(this.lastPulse, pulseVal)) {
       this.pulseGain.gain.setTargetAtTime(pulseVal, now, 0.7);
       this.lastPulse = pulseVal;
     }
 
-    // Void layer: rises with void amount and theme darkness.
     const voidAmount = Math.max(voidAmt, themeDarkness * 0.55);
-    const voidVol = clamp01(voidAmount) * 0.10;
+    const voidVol = clamp01(voidAmount * preset.voidMul) * 0.10;
     const voidVal = ducked ? voidVol * 0.35 : voidVol;
     if (this.voidGain && changed(this.lastVoid, voidVal)) {
       this.voidGain.gain.setTargetAtTime(voidVal, now, 0.5);
@@ -286,9 +397,6 @@ class AudioEngine {
       this.voidFilter.frequency.setTargetAtTime(voidFilterVal, now, 0.5);
       this.lastVoidFilter = voidFilterVal;
     }
-
-    // NOTE: musicGain is intentionally NOT touched here. Master music level
-    // is driven only by setMusic/startMusic/sfx('hit').
   }
 
 
@@ -298,7 +406,6 @@ class AudioEngine {
     if (!ctx || !this.master) return;
     this.ambientStarted = true;
 
-    // Pink-ish noise buffer (2s loop)
     const len = ctx.sampleRate * 2;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buf.getChannelData(0);
@@ -323,7 +430,6 @@ class AudioEngine {
     src.connect(filt).connect(gain).connect(this.master);
     src.start();
 
-    // Deep sub drones for atmosphere
     const droneFreqs = [55, 82.5, 65.4];
     droneFreqs.forEach((f, i) => {
       const osc = ctx.createOscillator();
