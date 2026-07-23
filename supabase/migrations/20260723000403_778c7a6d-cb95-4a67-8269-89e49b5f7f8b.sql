@@ -1,0 +1,1 @@
+DELETE FROM leaderboard_scores WHERE id IN (SELECT id FROM leaderboard_scores ORDER BY score DESC LIMIT 30);
