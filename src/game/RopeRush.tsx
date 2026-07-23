@@ -39,11 +39,37 @@ export function RopeRush() {
     const onResize = () => game.resize();
     window.addEventListener("resize", onResize);
     initRewardedAds().catch(() => {});
+
+    // Prevent browser zoom (keyboard shortcuts, ctrl+wheel, pinch) which can
+    // trap the player by scaling the viewport mid-run.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && ["=", "+", "-", "_", "0"].includes(e.key)) {
+        e.preventDefault();
+      }
+      // Block space/arrows from scrolling the page while playing.
+      if ([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End"].includes(e.key)) {
+        e.preventDefault();
+      }
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) e.preventDefault();
+    };
+    const onGesture = (e: Event) => e.preventDefault();
+    window.addEventListener("keydown", onKeyDown, { passive: false });
+    window.addEventListener("wheel", onWheel, { passive: false });
+    document.addEventListener("gesturestart", onGesture as EventListener);
+    document.addEventListener("gesturechange", onGesture as EventListener);
+    document.addEventListener("gestureend", onGesture as EventListener);
     // Stay on menu until first tap.
 
     return () => {
       unsub();
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("wheel", onWheel);
+      document.removeEventListener("gesturestart", onGesture as EventListener);
+      document.removeEventListener("gesturechange", onGesture as EventListener);
+      document.removeEventListener("gestureend", onGesture as EventListener);
       game.detach();
     };
   }, []);
