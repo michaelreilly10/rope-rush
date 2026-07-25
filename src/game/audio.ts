@@ -205,10 +205,10 @@ class AudioEngine {
   }
 
   private stepDuration(): number {
-    // Tempo ramps from 96 BPM (calm) to 172 BPM (max speed).
+    // Tempo ramps from 60 BPM (calm) to 108 BPM (max speed).
     const s = Math.max(0, Math.min(1, this.currentSpeedPct));
     const eased = s * s * (3 - 2 * s);
-    const bpm = 96 + eased * 76;
+    const bpm = 60 + eased * 48;
     // 16th-note grid: 4 steps per beat.
     return 60 / bpm / 4;
   }
