@@ -262,7 +262,8 @@ export function GameOver({
             {hud.canContinue && (
               <button
                 onClick={playAd}
-                className="rounded-xl border border-emerald-300/40 bg-emerald-500/20 px-6 py-4 font-display text-xl text-emerald-200 backdrop-blur-md active:scale-[0.98]"
+                disabled={!buttonsReady}
+                className="rounded-xl border border-emerald-300/40 bg-emerald-500/20 px-6 py-4 font-display text-xl text-emerald-200 backdrop-blur-md active:scale-[0.98] disabled:opacity-40 disabled:scale-100"
                 style={{ textShadow: "0 0 10px rgba(52,211,153,0.9)" }}
               >
                 ▶ Continue
@@ -270,14 +271,16 @@ export function GameOver({
             )}
             <button
               onClick={onRetry}
-              className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-6 py-4 font-display text-xl text-cyan-100 backdrop-blur-md active:scale-[0.98]"
+              disabled={!buttonsReady}
+              className="rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-6 py-4 font-display text-xl text-cyan-100 backdrop-blur-md active:scale-[0.98] disabled:opacity-40 disabled:scale-100"
               style={{ textShadow: "0 0 10px rgba(0,217,255,0.9)" }}
             >
               Retry
             </button>
             <button
               onClick={() => onLeaderboard(submittedId ?? undefined)}
-              className="rounded-xl border border-white/15 bg-black/40 px-6 py-3 font-display text-sm uppercase tracking-widest text-white/80 backdrop-blur-md active:scale-[0.98]"
+              disabled={!buttonsReady}
+              className="rounded-xl border border-white/15 bg-black/40 px-6 py-3 font-display text-sm uppercase tracking-widest text-white/80 backdrop-blur-md active:scale-[0.98] disabled:opacity-40 disabled:scale-100"
             >
               View Leaderboard
             </button>
