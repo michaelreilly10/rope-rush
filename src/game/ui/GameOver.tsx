@@ -89,6 +89,7 @@ export function GameOver({
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [buttonsReady, setButtonsReady] = useState(false);
 
   useEffect(() => {
     // Submit provisionally on every game-over, including when the player has
