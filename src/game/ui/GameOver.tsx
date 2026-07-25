@@ -241,7 +241,7 @@ export function GameOver({
                 />
                 <button
                   onClick={doSubmit}
-                  disabled={status === "submitting" || !name.trim()}
+                  disabled={!buttonsReady || status === "submitting" || !name.trim()}
                   className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 text-xs font-display uppercase tracking-widest text-cyan-100 backdrop-blur-md active:scale-95 disabled:opacity-40"
                 >
                   {status === "submitting" ? "…" : "Submit"}
