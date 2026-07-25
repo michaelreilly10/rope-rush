@@ -130,7 +130,10 @@ export function GameOver({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionToken]);
 
-
+  useEffect(() => {
+    const id = setTimeout(() => setButtonsReady(true), 2000);
+    return () => clearTimeout(id);
+  }, []);
 
   const playAd = () => {
     // As soon as the player commits to the ad, retract any provisional
