@@ -16,17 +16,19 @@ export type MusicVibe = "arcade";
 
 // A 16-step catchy loop in A minor. `null` = rest.
 // Lead is the memorable hook, bass grounds the groove.
+// A more atmospheric A-minor line: smaller interval jumps, lower/mid register,
+// longer sustained notes on strong beats, fewer nursery-rhyme leaps.
 const LEAD_NOTES: (number | null)[] = [
-  440.00, 523.25, 659.25, 880.00,
-  783.99, 659.25, 523.25, 587.33,
-  659.25, 587.33, 523.25, 493.88,
-  440.00, 392.00, 440.00, null,
+  220.00, 261.63, 329.63, 392.00,
+  349.23, 329.63, 293.66, 261.63,
+  220.00, 261.63, 220.00, 196.00,
+  220.00, 196.00, 164.81, 196.00,
 ];
 const BASS_NOTES: (number | null)[] = [
-  110.00, null,   82.41, null,
-   87.31, null,   98.00, null,
-  110.00, null,   82.41, null,
-   87.31,  98.00, 110.00, null,
+  110.00, null, 82.41, null,
+  110.00, null, 82.41, null,
+  73.42, null, 110.00, null,
+  82.41, null, 110.00, null,
 ];
 const STEPS = LEAD_NOTES.length;
 
