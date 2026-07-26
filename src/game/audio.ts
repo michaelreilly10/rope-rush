@@ -36,6 +36,7 @@ class AudioEngine {
   private master: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private musicFilter: BiquadFilterNode | null = null;
+  private pauseGain: GainNode | null = null;
   private leadGain: GainNode | null = null;
   private bassGain: GainNode | null = null;
   private voidGain: GainNode | null = null;
@@ -92,6 +93,14 @@ class AudioEngine {
     if (!this.ctx || !this.musicGain) return;
     const t = this.ctx.currentTime;
     this.musicGain.gain.setTargetAtTime(on ? 1 : 0, t, 0.1);
+  }
+
+  /** Dims the music while the game is paused without fully muting it. */
+  pauseDim(dim: boolean) {
+    const ctx = this.ensure();
+    if (!ctx || !this.pauseGain) return;
+    const t = ctx.currentTime;
+    this.pauseGain.gain.setTargetAtTime(dim ? 0.2 : 1, t, 0.3);
   }
 
   private blip(freq: number, dur: number, type: OscillatorType, vol = 0.2, slide = 0) {
@@ -168,7 +177,10 @@ class AudioEngine {
 
     this.musicGain = ctx.createGain();
     this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, tStart);
-    this.musicFilter.connect(this.musicGain).connect(this.master);
+
+    this.pauseGain = ctx.createGain();
+    this.pauseGain.gain.setValueAtTime(1, tStart);
+    this.musicFilter.connect(this.musicGain).connect(this.pauseGain).connect(this.master);
 
     this.leadGain = ctx.createGain();
     this.leadGain.gain.value = 0.22;
