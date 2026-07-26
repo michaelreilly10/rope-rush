@@ -262,6 +262,7 @@ class AudioEngine {
   private lastFilter = -1;
   private lastVoid = -1;
   private lastVoidFilter = -1;
+  private lastLeadFreq: number | null = null;
 
   updateMusicLayers(speedPct: number, themeDarkness: number, voidAmt: number) {
     if (!this.ctx || !this.musicFilter || !this.musicGain) return;
