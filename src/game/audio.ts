@@ -177,7 +177,10 @@ class AudioEngine {
 
     this.musicGain = ctx.createGain();
     this.musicGain.gain.setValueAtTime(this.musicOn ? 1 : 0, tStart);
-    this.musicFilter.connect(this.musicGain).connect(this.master);
+
+    this.pauseGain = ctx.createGain();
+    this.pauseGain.gain.setValueAtTime(1, tStart);
+    this.musicFilter.connect(this.musicGain).connect(this.pauseGain).connect(this.master);
 
     this.leadGain = ctx.createGain();
     this.leadGain.gain.value = 0.22;
