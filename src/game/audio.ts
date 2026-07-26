@@ -245,7 +245,7 @@ class AudioEngine {
     const bass = BASS_NOTES[i];
     if (bass != null && this.bassGain) {
       // Triangle bass is smoother and less buzzy than sawtooth.
-      this.noteOn(bass, when, this.stepDuration() * 2.0, "triangle", 0.12 + 0.05 * s, this.bassGain);
+      this.noteOn(bass, when, this.stepDuration() * 2.0, "triangle", 0.18 + 0.07 * s, this.bassGain);
     }
   }
 
