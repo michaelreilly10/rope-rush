@@ -36,6 +36,7 @@ class AudioEngine {
   private master: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private musicFilter: BiquadFilterNode | null = null;
+  private pauseGain: GainNode | null = null;
   private leadGain: GainNode | null = null;
   private bassGain: GainNode | null = null;
   private voidGain: GainNode | null = null;
