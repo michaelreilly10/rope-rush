@@ -95,6 +95,14 @@ class AudioEngine {
     this.musicGain.gain.setTargetAtTime(on ? 1 : 0, t, 0.1);
   }
 
+  /** Dims the music while the game is paused without fully muting it. */
+  pauseDim(dim: boolean) {
+    const ctx = this.ensure();
+    if (!ctx || !this.pauseGain) return;
+    const t = ctx.currentTime;
+    this.pauseGain.gain.setTargetAtTime(dim ? 0.2 : 1, t, 0.3);
+  }
+
   private blip(freq: number, dur: number, type: OscillatorType, vol = 0.2, slide = 0) {
     if (!this.sfxOn) return;
     const ctx = this.ensure();
