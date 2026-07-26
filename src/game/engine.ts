@@ -379,8 +379,8 @@ export class Game {
     this.emit();
   }
 
-  pause() { if (this.phase === "playing") { this.phase = "paused"; this.emit(); } }
-  resumePlay() { if (this.phase === "paused") { this.phase = "playing"; this.emit(); } }
+  pause() { if (this.phase === "playing") { this.phase = "paused"; audio.pauseDim(true); this.emit(); } }
+  resumePlay() { if (this.phase === "paused") { this.phase = "playing"; audio.pauseDim(false); this.emit(); } }
   goMenu() { this.phase = "menu"; this.emit(); }
   goShop() { this.phase = "shop"; this.emit(); }
   goSettings() { this.phase = "settings"; this.emit(); }
