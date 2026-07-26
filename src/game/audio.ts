@@ -14,10 +14,9 @@ type SfxName =
 // Kept for backwards compat with any imports; music is a single tune now.
 export type MusicVibe = "arcade";
 
-// A 16-step catchy loop in A minor. `null` = rest.
-// Lead is the memorable hook, bass grounds the groove.
-// A more atmospheric A-minor line: smaller interval jumps, lower/mid register,
-// longer sustained notes on strong beats, fewer nursery-rhyme leaps.
+// A 16-step atmospheric A-minor loop. `null` = rest.
+// Smaller interval jumps, lower/mid register, and sustained notes keep it from
+// sounding toy-like or circus-like.
 const LEAD_NOTES: (number | null)[] = [
   220.00, 261.63, 329.63, 392.00,
   349.23, 329.63, 293.66, 261.63,
