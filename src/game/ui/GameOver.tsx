@@ -131,7 +131,7 @@ export function GameOver({
   }, [sessionToken]);
 
   useEffect(() => {
-    const id = setTimeout(() => setButtonsReady(true), 2000);
+    const id = setTimeout(() => setButtonsReady(true), 1000);
     return () => clearTimeout(id);
   }, []);
 
