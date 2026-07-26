@@ -233,26 +233,47 @@ class AudioEngine {
 
     const lead = LEAD_NOTES[i];
     if (lead != null && this.leadGain) {
-      this.noteOn(lead, when, this.stepDuration() * 1.6, "square", 0.16 * energy, this.leadGain);
-      // Sparkle octave on downbeats when moving fast.
-      if (s > 0.5 && (i % 4 === 0)) {
-        this.noteOn(lead * 2, when, this.stepDuration() * 0.9, "triangle", 0.05 * s, this.leadGain);
-      }
+      // Warmer lead: triangle plus a subtle detuned sine body.
+      // Small portamento from the previous note so the line flows rather than jumps.
+      const slideFrom = this.lastLeadFreq;
+      this.lastLeadFreq = lead;
+      this.noteOn(lead, when, this.stepDuration() * 1.7, "triangle", 0.14 * energy, this.leadGain, slideFrom, 0.05);
+      this.noteOn(lead, when, this.stepDuration() * 1.7, "sine", 0.06 * energy, this.leadGain, slideFrom, 0.05, -7);
+    } else if (lead == null) {
+      this.lastLeadFreq = null;
     }
     const bass = BASS_NOTES[i];
     if (bass != null && this.bassGain) {
-      this.noteOn(bass, when, this.stepDuration() * 1.9, "sawtooth", 0.14 + 0.06 * s, this.bassGain);
+      // Triangle bass is smoother and less buzzy than sawtooth.
+      this.noteOn(bass, when, this.stepDuration() * 2.0, "triangle", 0.12 + 0.05 * s, this.bassGain);
     }
   }
 
-  private noteOn(freq: number, when: number, dur: number, type: OscillatorType, vol: number, dest: AudioNode) {
+  private noteOn(
+    freq: number,
+    when: number,
+    dur: number,
+    type: OscillatorType,
+    vol: number,
+    dest: AudioNode,
+    slideFrom?: number | null,
+    slideTime?: number,
+    detuneCents: number = 0,
+  ) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = type;
-    osc.frequency.setValueAtTime(freq, when);
+    osc.detune.value = detuneCents;
+    const startFreq = slideFrom ?? freq;
+    osc.frequency.setValueAtTime(startFreq, when);
+    if (slideFrom != null && slideFrom !== freq && slideTime) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq), when + slideTime);
+    }
+    // Softer attack so notes don’t snap on; smoother release.
     g.gain.setValueAtTime(0, when);
-    g.gain.linearRampToValueAtTime(vol, when + 0.008);
+    g.gain.linearRampToValueAtTime(vol, when + 0.04);
+    g.gain.setValueAtTime(vol, when + dur * 0.7);
     g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
     osc.connect(g).connect(dest);
     osc.start(when);
